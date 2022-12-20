@@ -1,9 +1,9 @@
-import ReactFlow from "reactflow";
-import "reactflow/dist/style.css";
-import useStore from "./store";
+import ReactFlow from "reactflow"
+import "reactflow/dist/style.css"
+import useStore from "../domain/graph"
 
-const PlanDisplay = () => {
-  const store = useStore();
+export default function PlanDisplay() {
+  const store = useStore()
   return (
     <ReactFlow
       nodes={store.nodes}
@@ -14,5 +14,3 @@ const PlanDisplay = () => {
     />
   )
 }
-
-export default PlanDisplay;

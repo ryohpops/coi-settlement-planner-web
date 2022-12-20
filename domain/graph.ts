@@ -3,8 +3,8 @@ import {
   EdgeChange,
   Node,
   NodeChange, OnEdgesChange, OnNodesChange
-} from 'reactflow';
-import create from 'zustand';
+} from 'reactflow'
+import create from 'zustand'
 
 const initialNodes: Node[] = [
   {
@@ -32,11 +32,11 @@ const initialEdges: Edge[] = [
 ]
 
 type RFState = {
-  nodes: Node[];
-  edges: Edge[];
-  onNodesChange: OnNodesChange;
-  onEdgesChange: OnEdgesChange;
-};
+  nodes: Node[]
+  edges: Edge[]
+  onNodesChange: OnNodesChange
+  onEdgesChange: OnEdgesChange
+}
 
 const useStore = create<RFState>()((set, get) => ({
   nodes: initialNodes,
@@ -44,13 +44,13 @@ const useStore = create<RFState>()((set, get) => ({
   onNodesChange: (changes: NodeChange[]) => {
     set({
       nodes: applyNodeChanges(changes, get().nodes),
-    });
+    })
   },
   onEdgesChange: (changes: EdgeChange[]) => {
     set({
       edges: applyEdgeChanges(changes, get().edges),
-    });
+    })
   }
-}));
+}))
 
-export default useStore;
+export default useStore
