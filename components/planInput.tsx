@@ -10,11 +10,10 @@ const treeData = function () {
   categories
     .map<DataNode>((category) => ({ key: category, title: category, children: [] }))
     .forEach((node) => treeData.push(node))
-  Array.from(allFoods)
-    .forEach(([name, item]) => {
-      treeData.find((node) => node.key == item.category)
-        ?.children?.push({ key: name, title: name })
-    })
+  allFoods.forEach((item, name) => {
+    treeData.find((node) => node.key == item.category)
+      ?.children?.push({ key: name, title: name })
+  })
   return treeData
 }()
 
@@ -60,6 +59,7 @@ export default function PlanInput() {
         <Tree
           selectable={false} checkable treeData={treeData}
           defaultExpandAll={true}
+          defaultCheckedKeys={problemStore.foodsInUse}
           onCheck={(keys) => problemStore.setFoodsInUse(keys as string[])}
         />
       </Form.Item>

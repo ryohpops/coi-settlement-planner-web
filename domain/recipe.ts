@@ -56,6 +56,17 @@ const gh2RecipeData: Recipe[] = [
 export const productRecipes = new Map<string, Recipe>(
   productRecipeData.map((data) => [data.name, data])
 )
-export const farmRecipes = new Map<string, Recipe>(
+const farmRecipes = new Map<string, Recipe>(
   farmRecipeData.map((data) => [data.name, data])
 )
+const ghRecipes = new Map<string, Recipe>(
+  ghRecipeData.map((data) => [data.name, data])
+)
+const gh2Recipes = new Map<string, Recipe>(
+  gh2RecipeData.map((data) => [data.name, data])
+)
+export const farmingRecipes = {
+  [FARM_VARIANT.Farm]: farmRecipes,
+  [FARM_VARIANT.Greenhouse]: ghRecipes,
+  [FARM_VARIANT.Greenhouse2]: gh2Recipes
+}
