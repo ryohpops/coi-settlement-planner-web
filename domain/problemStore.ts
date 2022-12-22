@@ -1,7 +1,9 @@
 import create from "zustand"
 import { immer } from "zustand/middleware/immer"
-import { items } from "./item"
-import { FarmVariant, FARM_VARIANT } from "./recipe"
+import { generateCropRotations } from "./cropRotation"
+import { allFoods, Food } from "./item"
+import { farmRecipes, FarmVariant, FARM_VARIANT, productRecipes } from "./recipe"
+import { solve } from "./solver"
 
 interface ProblemState {
   population: number
@@ -21,8 +23,6 @@ interface ProblemAction {
   setFertilityTarget: (value: number | null) => void
 }
 
-const foodNames = Object.keys(items).filter((key) => items[key].isFood)
-
 export const useProblemStore = create<ProblemState & ProblemAction>()(
   immer((set) => ({
     population: 0,
@@ -33,6 +33,8 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
     fertilityTarget: 0,
     setPopulation: (value) => set((state) => {
       state.population = value ?? 0
+      const demands = calculateFoodDemands(state.population, state.globalAdjustment, state.foodsInUse)
+      solve(productRecipes, generateCropRotations(farmRecipes, state.fertilityTarget), demands)
     }),
     setConsumptionChange: (value) => set((state) => {
       state.consumptionChange = value ?? 0
@@ -41,7 +43,7 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
       state.globalAdjustment = value ?? 0
     }),
     setFoodsInUse: (values) => set((state) => {
-      state.foodsInUse = values.filter((key) => foodNames.includes(key))
+      state.foodsInUse = values.filter((key) => allFoods.has(key))
     }),
     setFarmVariant: (value) => set((state) => {
       state.farmVariant = value
@@ -51,3 +53,20 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
     })
   }))
 )
+
+function calculateFoodDemands(population: number, adjustment: number, foodsInUse: string[]): Map<string, number> {
+  const demands = new Map<string, number>()
+  const foods = foodsInUse.map((foodName) => allFoods.get(foodName)).filter(Boolean) as Food[]
+
+  const categoriesInUse = new Set<string>(foods.map((food) => food.category))
+  foods.forEach((food) => demands.set(
+    food.name,
+    population
+    / food.feeds
+    * (100 + adjustment) / 100
+    / categoriesInUse.size
+    / foods.filter((food2) => food2.category === food.category).length
+  ))
+
+  return demands
+}

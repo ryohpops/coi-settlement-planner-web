@@ -1,4 +1,4 @@
-interface Recipe {
+export interface Recipe {
   name: string
   production_time: number
   products: Map<string, number>
@@ -58,10 +58,4 @@ export const productRecipes = new Map<string, Recipe>(
 )
 export const farmRecipes = new Map<string, Recipe>(
   farmRecipeData.map((data) => [data.name, data])
-)
-export const ghRecipes = new Map<string, Recipe>(
-  ghRecipeData.map((data) => [data.name, data])
-)
-export const gh2Recipes = new Map<string, Recipe>(
-  gh2RecipeData.map((data) => [data.name, data])
 )

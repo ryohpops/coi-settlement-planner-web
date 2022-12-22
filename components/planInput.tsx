@@ -1,20 +1,22 @@
 import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space, Tree } from "antd"
 import { SliderMarks } from "antd/es/slider"
 import type { DataNode } from "antd/es/tree"
-import { categories, isFood, items } from "../domain/item"
+import { allFoods, categories } from "../domain/item"
 import { useProblemStore } from "../domain/problemStore"
 import { FARM_VARIANT } from "../domain/recipe"
 
-const treeData: DataNode[] = []
-categories
-  .map<DataNode>((category) => ({ key: category, title: category, children: [] }))
-  .forEach((node) => treeData.push(node))
-for (const name in items) {
-  const item = items[name]
-  if (isFood(item)) {
-    treeData.find((node) => node.key == item.category)?.children?.push({ key: name, title: name })
-  }
-}
+const treeData = function () {
+  const treeData: DataNode[] = []
+  categories
+    .map<DataNode>((category) => ({ key: category, title: category, children: [] }))
+    .forEach((node) => treeData.push(node))
+  Array.from(allFoods)
+    .forEach(([name, item]) => {
+      treeData.find((node) => node.key == item.category)
+        ?.children?.push({ key: name, title: name })
+    })
+  return treeData
+}()
 
 const fertilityTargetMarks: SliderMarks = {
   0: "0%",
@@ -42,7 +44,10 @@ export default function PlanInput() {
           onChange={(value) => problemStore.setConsumptionChange(value)}
         />
       </Form.Item>
-      <Form.Item label="Global adjustment">
+      <Form.Item
+        label="Global adjustment"
+        tooltip="Produce every food x% more than required amount as buffers"
+      >
         <InputNumber
           addonAfter="%"
           value={problemStore.globalAdjustment}
