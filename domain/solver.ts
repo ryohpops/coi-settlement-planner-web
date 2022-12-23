@@ -1,18 +1,22 @@
-import Solver, { CoefficientsOfVariable, Constraints, Ints, Variables } from "javascript-lp-solver";
-import { generateCropRotations } from "./cropRotation";
-import { allFoods, Food } from "./item";
-import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe";
+import Solver, { CoefficientsOfVariable, Constraints, Ints, Variables } from "javascript-lp-solver"
+import { generateCropRotations } from "./cropRotation"
+import { allFoods, allItems, Food, Item } from "./item"
+import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
 
 const FARM_COUNT = "Farm Count"
 
-interface ItemResult {
-  name: string
+export interface ItemResult {
+  item: Item
   ins: Map<string, number>
   outs: Map<string, number>
 }
+export interface RecipeResult {
+  recipe: Recipe
+  times: number
+}
 export interface Result {
   itemResults: Map<string, ItemResult>
-  recipeResults: Map<string, number>
+  recipeResults: Map<string, RecipeResult>
 }
 
 export function solve(
@@ -23,7 +27,7 @@ export function solve(
   const items = new Set<string>()
 
   const variables: Variables = {}
-  const cropRotations = generateCropRotations(farmingRecipes[farmVariant], fertilityTarget);
+  const cropRotations = generateCropRotations(farmingRecipes[farmVariant], fertilityTarget)
   const relatedCrops = addVariables(cropRotations, variables)
   relatedCrops.forEach((crop) => crops.add(crop))
   const relatedItems = addVariables(productRecipes, variables)
@@ -49,32 +53,32 @@ export function solve(
     return undefined
   }
 
-  const recipeResults = new Map<string, number>()
-  cropRotations.forEach((value, name) => recipeResults.set(name, solverResult[name] ?? 0))
-  productRecipes.forEach((value, name) => recipeResults.set(name, solverResult[name] ?? 0))
-  const usedRecipeResults = new Map<string, number>(
-    Array.from(recipeResults).filter(([key, value]) => value > 0)
+  const recipeResults = new Map<string, RecipeResult>()
+  cropRotations.forEach((recipe, name) => recipeResults.set(name, { recipe: recipe, times: solverResult[name] ?? 0 }))
+  productRecipes.forEach((recipe, name) => recipeResults.set(name, { recipe: recipe, times: solverResult[name] ?? 0 }))
+  const usedRecipeResults = new Map<string, RecipeResult>(
+    Array.from(recipeResults).filter(([name, recipe]) => recipe.times > 0)
   )
 
   const itemResults = new Map<string, ItemResult>()
-  usedRecipeResults.forEach((value, recipeName) => {
-    const recipe = cropRotations.get(recipeName) ?? productRecipes.get(recipeName)!
+  usedRecipeResults.forEach((recipeResult, recipeName) => {
+    const recipe = recipeResult.recipe
     recipe.products.forEach((amount, itemName) => {
       if (!itemResults.has(itemName)) {
-        itemResults.set(itemName, { name: itemName, ins: new Map(), outs: new Map() })
+        itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
       }
-      itemResults.get(itemName)!.ins.set(recipeName, amount * (recipeResults.get(recipeName) ?? 0))
+      itemResults.get(itemName)!.ins.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0))
     })
     recipe.ingredients.forEach((amount, itemName) => {
       if (!itemResults.has(itemName)) {
-        itemResults.set(itemName, { name: itemName, ins: new Map(), outs: new Map() })
+        itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
       }
-      itemResults.get(itemName)!.outs.set(recipeName, amount * (recipeResults.get(recipeName) ?? 0))
+      itemResults.get(itemName)!.outs.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0))
     })
   })
 
   return {
-    itemResults: itemResults, recipeResults: recipeResults
+    itemResults: itemResults, recipeResults: usedRecipeResults
   }
 }
 
@@ -98,16 +102,25 @@ function calculateFoodDemands(population: number, adjustment: number, foodsInUse
 function addVariables(recipes: Map<string, Recipe>, variables: Variables): Set<string> {
   const items = new Set<string>()
   recipes.forEach((recipe) => {
-    const coefficients: CoefficientsOfVariable = {};
+    const coefficients: CoefficientsOfVariable = {}
     recipe.products.forEach((amount, product) => {
-      coefficients[product] = amount;
-      items.add(product);
-    });
+      coefficients[product] = amount
+      items.add(product)
+    })
     recipe.ingredients.forEach((amount, ingredient) => {
-      coefficients[ingredient] = -amount;
-      items.add(ingredient);
-    });
-    variables[recipe.name] = coefficients;
+      coefficients[ingredient] = -amount
+      items.add(ingredient)
+    })
+    variables[recipe.name] = coefficients
   })
   return items
+}
+
+function getItem(name: string): Item {
+  const item = allItems.get(name)
+  if (item) {
+    return item
+  } else {
+    throw new Error(`Item ${name} does not exists.`)
+  }
 }

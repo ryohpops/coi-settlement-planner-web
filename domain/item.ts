@@ -20,6 +20,7 @@ const foodData: Food[] = [
 ]
 const productData: Item[] = [
   { name: "Flour", image: "", isFood: false },
+  { name: "Wheat", image: "", isFood: false },
   { name: "Animal Feed", image: "", isFood: false }
 ]
 

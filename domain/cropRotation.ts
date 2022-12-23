@@ -21,11 +21,11 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
     const totalFertilityUsage = cropRecipes.reduce((sum, recipe) => sum + getFertilityUsage(recipe), 0)
     equilibrium -= totalFertilityUsage / rotationTime * DAY_LENGTH * 100
   } else {
-    throw new Error(`Invalid recipes were given for createCropRotation.`);
+    throw new Error(`Invalid recipes were given for createCropRotation.`)
   }
   equilibrium = Math.max(equilibrium, fertilityTarget)
 
-  const products = new Map<string, number>();
+  const products = new Map<string, number>()
   cropRecipes.forEach((recipe) => recipe.products.forEach((value, key) => products.set(key, value * equilibrium)))
 
   return {
@@ -41,6 +41,6 @@ function getFertilityUsage(recipe: Recipe): number {
   if (fertilityUsage) {
     return fertilityUsage
   } else {
-    throw new Error(`Fertility usage not found for crop ${recipe.name}.`);
+    throw new Error(`Fertility usage not found for crop ${recipe.name}.`)
   }
 }
