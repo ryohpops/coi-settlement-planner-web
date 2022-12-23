@@ -12,7 +12,7 @@ const options = {
   hAxis: {
     minValue: 0,
   },
-  legend: { position: "top" }
+  legend: { position: "none" }
 }
 
 export default function ItemResultNode({ data }: NodeProps<ItemResult>) {

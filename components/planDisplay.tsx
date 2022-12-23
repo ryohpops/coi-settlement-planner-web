@@ -1,16 +1,19 @@
 import dagre from "dagre"
-import ReactFlow, { Edge, Node, NodeTypes, Position } from "reactflow"
+import ReactFlow, { Edge, Node, NodeTypes, Panel, Position } from "reactflow"
 import "reactflow/dist/style.css"
 import { useProblemStore } from "../domain/problemStore"
-import { ItemResult } from "../domain/solver"
+import { ItemResult, RecipeResult } from "../domain/solver"
 import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
+import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
 
 const nodeTypes: NodeTypes = {
-  itemResult: ItemResultNode
+  itemResult: ItemResultNode,
+  recipeResult: RecipeResultNode
 }
 
 export default function PlanDisplay() {
   const answer = useProblemStore((state) => state.answer)
+  const feasible = useProblemStore((state) => state.feasible)
 
   const graph = new dagre.graphlib.Graph()
   graph.setGraph({ rankdir: "LR" })
@@ -18,14 +21,14 @@ export default function PlanDisplay() {
 
   const nodes: Node[] = []
   const edges: Edge[] = []
-  answer.itemResults.forEach((itemResult, itemName) => {
+  answer?.itemResults.forEach((itemResult, itemName) => {
     graph.setNode(itemName, { width: ItemResultNodeWidth, height: ItemResultNodeHeight })
     nodes.push(createItemNode(itemResult))
   })
-  answer.recipeResults.forEach((recipeResult, recipeName) => {
-    const recipeNodeName = recipeName + " Recipe"
-    graph.setNode(recipeNodeName, { width: ItemResultNodeWidth, height: ItemResultNodeHeight })
-    nodes.push(createNode(recipeNodeName))
+  answer?.recipeResults.forEach((recipeResult, recipeName) => {
+    const recipeNodeName = "Produce " + recipeName
+    graph.setNode(recipeNodeName, { width: RecipeResultNodeWidth, height: RecipeResultNodeHeight })
+    nodes.push(createRecipeNode(recipeResult))
     recipeResult.recipe.products.forEach((amount, name) => {
       graph.setEdge(name, recipeNodeName)
       edges.push({ id: `${name} - ${recipeNodeName}`, source: name, target: recipeNodeName })
@@ -45,20 +48,24 @@ export default function PlanDisplay() {
   })
 
   return (
-    <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView />
+    <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
+      <Panel position="bottom-right">{feasible ? "Solved!" : "Unfeasible"}</Panel>
+    </ReactFlow>
   )
-}
-
-function createNode(name: string): Node {
-  return {
-    id: name, position: { x: 0, y: 0 }, data: { label: name },
-    sourcePosition: Position.Right, targetPosition: Position.Left
-  }
 }
 
 function createItemNode(itemResult: ItemResult): Node<ItemResult> {
   return {
-    id: itemResult.item.name, type: "itemResult", position: { x: 0, y: 0 }, data: itemResult,
+    id: itemResult.item.name, type: "itemResult",
+    position: { x: 0, y: 0 }, data: itemResult,
+    sourcePosition: Position.Right, targetPosition: Position.Left
+  }
+}
+
+function createRecipeNode(recipeResult: RecipeResult): Node<RecipeResult> {
+  return {
+    id: "Produce " + recipeResult.recipe.name, type: "recipeResult",
+    position: { x: 0, y: 0 }, data: recipeResult,
     sourcePosition: Position.Right, targetPosition: Position.Left
   }
 }

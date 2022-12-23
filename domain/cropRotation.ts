@@ -16,9 +16,9 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
   const rotationTime = cropRecipes.reduce((sum, recipe) => sum + recipe.production_time, 0)
   if (cropRecipes.length == 1) {
     const crop = cropRecipes[0]
-    equilibrium -= getFertilityUsage(crop) / crop.production_time * DAY_LENGTH * 100
+    equilibrium -= getFertilityUsage(crop) * 1.5 / crop.production_time * DAY_LENGTH * 100
   } else if (cropRecipes.length > 1) {
-    const totalFertilityUsage = cropRecipes.reduce((sum, recipe) => sum + getFertilityUsage(recipe), 0)
+    const totalFertilityUsage = cropRecipes.reduce((sum, recipe) => sum + getFertilityUsage(recipe) * recipe.production_time / rotationTime, 0)
     equilibrium -= totalFertilityUsage / rotationTime * DAY_LENGTH * 100
   } else {
     throw new Error(`Invalid recipes were given for createCropRotation.`)

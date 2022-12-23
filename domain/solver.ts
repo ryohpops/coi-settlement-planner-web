@@ -3,6 +3,7 @@ import { generateCropRotations } from "./cropRotation"
 import { allFoods, allItems, Food, Item } from "./item"
 import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
 
+const TIME_SCALE = 60
 const FARM_COUNT = "Farm Count"
 
 export interface ItemResult {
@@ -104,11 +105,11 @@ function addVariables(recipes: Map<string, Recipe>, variables: Variables): Set<s
   recipes.forEach((recipe) => {
     const coefficients: CoefficientsOfVariable = {}
     recipe.products.forEach((amount, product) => {
-      coefficients[product] = amount
+      coefficients[product] = amount / recipe.production_time * TIME_SCALE
       items.add(product)
     })
     recipe.ingredients.forEach((amount, ingredient) => {
-      coefficients[ingredient] = -amount
+      coefficients[ingredient] = -amount / recipe.production_time * TIME_SCALE
       items.add(ingredient)
     })
     variables[recipe.name] = coefficients

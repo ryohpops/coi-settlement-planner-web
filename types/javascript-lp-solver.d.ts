@@ -11,9 +11,16 @@ declare module "javascript-lp-solver" {
   export type Variables = { [name: string]: CoefficientsOfVariable }
   export type Ints = { [variable: string]: 1 }
 
-  export interface Model {
-    optimize: string | { [variable: string]: OpType }
+  export interface SingleGoalModel {
+    optimize: string
     opType?: OpType
+    constraints: Constraints
+    variables: Variables
+    ints?: Ints
+    options?: Options
+  }
+  export interface MultipleGoalModel {
+    optimize: { [variable: string]: OpType }
     constraints: Constraints
     variables: Variables
     ints?: Ints
@@ -24,11 +31,15 @@ declare module "javascript-lp-solver" {
     tolerance: number
   }
 
-  export interface Result {
+  export interface SingleGoalResult {
     feasible: boolean
     [variable: string]: number
     result: number
   }
+  export interface MultipleGoalResult {
+    midpoint: SingleGoalResult
+  }
 
-  function Solve(model: Model): Result
+  function Solve(model: SingleGoalModel): SingleGoalResult
+  function Solve(model: MultipleGoalModel): MultipleGoalResult
 }
