@@ -68,13 +68,13 @@ export function solve(
       if (!itemResults.has(itemName)) {
         itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
       }
-      itemResults.get(itemName)!.ins.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0))
+      itemResults.get(itemName)!.ins.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE)
     })
     recipe.ingredients.forEach((amount, itemName) => {
       if (!itemResults.has(itemName)) {
         itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
       }
-      itemResults.get(itemName)!.outs.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0))
+      itemResults.get(itemName)!.outs.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE)
     })
   })
 

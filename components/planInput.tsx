@@ -8,7 +8,9 @@ import { FARM_VARIANT } from "../domain/recipe"
 const treeData = function () {
   const treeData: DataNode[] = []
   categories
-    .map<DataNode>((category) => ({ key: category, title: category, children: [] }))
+    .map<DataNode>((category) => (
+      { key: category, title: category, children: [] }
+    ))
     .forEach((node) => treeData.push(node))
   allFoods.forEach((item, name) => {
     treeData.find((node) => node.key == item.category)

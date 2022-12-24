@@ -14,8 +14,12 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeResult>) {
       >
         {`Count: ${data.times}`}
       </Card>
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Right} />
+      {data.recipe.ingredients.size > 0 &&
+        <Handle type="target" position={Position.Left} />
+      }
+      {data.recipe.products.size > 0 &&
+        <Handle type="source" position={Position.Right} />
+      }
     </>
   )
 }
