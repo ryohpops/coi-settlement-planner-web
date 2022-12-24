@@ -10,6 +10,7 @@ export interface ItemResult {
   item: Item
   ins: Map<string, number>
   outs: Map<string, number>
+  transientDemand: number
 }
 export interface RecipeResult {
   recipe: Recipe
@@ -24,24 +25,60 @@ export function solve(
   population: number, demandAdjustment: number,
   foodsInUse: string[], farmVariant: FarmVariant, fertilityTarget: number
 ): Result | undefined {
-  const crops = new Set<string>()
-  const items = new Set<string>()
+  const itemResults = new Map<string, ItemResult>()
+  allItems.forEach((item, itemName) =>
+    itemResults.set(itemName, { item: item, ins: new Map(), outs: new Map(), transientDemand: 0 })
+  )
 
+  const recipeResults = new Map<string, RecipeResult>()
+  productRecipes.forEach((recipe, recipeName) =>
+    recipeResults.set(recipeName, { recipe: recipe, times: 0 })
+  )
+  farmingRecipes[farmVariant].forEach((recipe, recipeName) =>
+    recipeResults.set(recipeName, { recipe: recipe, times: 0 })
+  )
+
+  const foodDemands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
+  foodDemands.forEach((demand, foodName) =>
+    getItem(itemResults, foodName).transientDemand = demand
+  )
+
+  // Resolve food demands into intermediate item demands
+  Array.from(itemResults.values())
+    .filter((item) => item.item.isFood && !item.item.isCrop && item.transientDemand > 0)
+    .forEach((food) => resolveItem(food, itemResults, recipeResults))
+
+  // Resolve intermediate-item demands into crop demands
+  const intermediateItems = Array.from(itemResults.values())
+    .filter((item) => !item.item.isFood && !item.item.isCrop)
+  let resolved = Number.MAX_SAFE_INTEGER
+  while (resolved > 0) {
+    resolved = 0
+    intermediateItems.filter((item) => item.transientDemand > 0)
+      .forEach((item) => {
+        resolveItem(item, itemResults, recipeResults)
+        resolved++
+      })
+  }
+
+  // Get crop with demands
+  const cropsWithDemands = Array.from(itemResults.values())
+    .filter((item) => item.item.isCrop && item.transientDemand > 0)
+  const cropRecipes = cropsWithDemands.map((crop) => getItem(farmingRecipes[farmVariant], crop.item.name))
+
+  // Resolve crop demands into crop rotation counts
   const variables: Variables = {}
-  const cropRotations = generateCropRotations(farmingRecipes[farmVariant], fertilityTarget)
-  const relatedCrops = addVariables(cropRotations, variables)
-  relatedCrops.forEach((crop) => crops.add(crop))
-  const relatedItems = addVariables(productRecipes, variables)
-  relatedItems.forEach((item) => items.add(item))
-  cropRotations.forEach((value, name) => variables[name][FARM_COUNT] = 1)
+  const cropRotations = generateCropRotations(cropRecipes, fertilityTarget)
+  cropRotations.forEach((cropRotation, cropRotationName) => {
+    addVariables(cropRotation, variables)
+    variables[cropRotationName][FARM_COUNT] = 1
+  })
 
   const constraints: Constraints = {}
-  const demands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
-  crops.forEach((crop) => constraints[crop] = { min: demands.get(crop) ?? 0 })
-  items.forEach((item) => constraints[item] = { min: demands.get(item) ?? 0 })
+  cropsWithDemands.forEach((crop) => constraints[crop.item.name] = { min: crop.transientDemand })
 
   const ints: Ints = {}
-  cropRotations.forEach((cropRotation) => ints[cropRotation.name] = 1)
+  cropRotations.forEach((cropRotation, cropRotationName) => ints[cropRotationName] = 1)
 
   const solverResult = Solver.Solve({
     optimize: FARM_COUNT,
@@ -54,44 +91,23 @@ export function solve(
     return undefined
   }
 
-  const recipeResults = new Map<string, RecipeResult>()
-  cropRotations.forEach((recipe, name) => recipeResults.set(
-    name,
-    { recipe: recipe, times: solverResult[name] ?? 0 }
-  ))
-  productRecipes.forEach((recipe, name) => recipeResults.set(
-    name,
-    { recipe: recipe, times: solverResult[name] ?? 0 }
-  ))
-  const usedRecipeResults = new Map<string, RecipeResult>(
-    Array.from(recipeResults).filter(([name, recipe]) => recipe.times > 0)
-  )
-
-  const itemResults = new Map<string, ItemResult>()
-  usedRecipeResults.forEach((recipeResult, recipeName) => {
-    const recipe = recipeResult.recipe
-    recipe.products.forEach((amount, itemName) => {
-      if (!itemResults.has(itemName)) {
-        itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
-      }
-      itemResults.get(itemName)!.ins.set(
-        recipeName,
-        amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE
-      )
-    })
-    recipe.ingredients.forEach((amount, itemName) => {
-      if (!itemResults.has(itemName)) {
-        itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
-      }
-      itemResults.get(itemName)!.outs.set(
-        recipeName,
-        amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE
-      )
-    })
+  cropRotations.forEach((cropRotation, cropRotationName) => {
+    const count = solverResult[cropRotationName] ?? 0
+    if (count > 0) {
+      recipeResults.set(cropRotationName, { recipe: cropRotation, times: count })
+      cropRotation.products.forEach((amount, cropName) => {
+        setOrSumItem(
+          getItem(itemResults, cropName).ins,
+          cropRotationName,
+          amount * count / cropRotation.production_time * TIME_SCALE
+        )
+      })
+    }
   })
 
   return {
-    itemResults: itemResults, recipeResults: usedRecipeResults
+    itemResults: new Map(Array.from(itemResults).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)),
+    recipeResults: new Map(Array.from(recipeResults).filter(([recipeName, recipe]) => recipe.times > 0))
   }
 }
 
@@ -112,28 +128,45 @@ function calculateFoodDemands(population: number, adjustment: number, foodsInUse
   return demands
 }
 
-function addVariables(recipes: Map<string, Recipe>, variables: Variables): Set<string> {
-  const items = new Set<string>()
-  recipes.forEach((recipe) => {
-    const coefficients: CoefficientsOfVariable = {}
-    recipe.products.forEach((amount, product) => {
-      coefficients[product] = amount / recipe.production_time * TIME_SCALE
-      items.add(product)
-    })
-    recipe.ingredients.forEach((amount, ingredient) => {
-      coefficients[ingredient] = -amount / recipe.production_time * TIME_SCALE
-      items.add(ingredient)
-    })
-    variables[recipe.name] = coefficients
+function resolveItem(item: ItemResult, itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>) {
+  const producer = getItem(recipeResults, item.item.name)
+  const cycle = item.transientDemand / getItem(producer.recipe.products, producer.recipe.name)
+  producer.recipe.products.forEach((amount, itemName) => {
+    const product = getItem(itemResults, itemName)
+    setOrSumItem(product.ins, itemName, amount * cycle)
+    product.transientDemand -= amount * cycle
   })
-  return items
+  producer.recipe.ingredients.forEach((amount, itemName) => {
+    const ingredient = getItem(itemResults, itemName)
+    setOrSumItem(ingredient.outs, itemName, amount * cycle)
+    ingredient.transientDemand += amount * cycle
+  })
+  producer.times += cycle
 }
 
-function getItem(name: string): Item {
-  const item = allItems.get(name)
-  if (item) {
-    return item
+function addVariables(recipe: Recipe, variables: Variables) {
+  const coefficients: CoefficientsOfVariable = {}
+  recipe.products.forEach((amount, product) => {
+    coefficients[product] = amount / recipe.production_time * TIME_SCALE
+  })
+  recipe.ingredients.forEach((amount, ingredient) => {
+    coefficients[ingredient] = -amount / recipe.production_time * TIME_SCALE
+  })
+  variables[recipe.name] = coefficients
+}
+
+function getItem<T>(map: Map<string, T>, key: string): T {
+  if (map.has(key)) {
+    return map.get(key)!
   } else {
-    throw new Error(`Item ${name} does not exists.`)
+    throw new Error(`Key ${key} does not exists. Item data and/or recipe data might be broken.`)
+  }
+}
+
+function setOrSumItem(map: Map<string, number>, key: string, value: number) {
+  if (map.has(key)) {
+    map.set(key, map.get(key)! + value)
+  } else {
+    map.set(key, value)
   }
 }

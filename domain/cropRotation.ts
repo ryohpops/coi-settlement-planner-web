@@ -2,11 +2,10 @@ import { Recipe } from "./recipe"
 
 const DAY_LENGTH = 2
 
-export function generateCropRotations(cropRecipes: Map<string, Recipe>, fertilityTarget: number): Map<string, Recipe> {
-  const recipes = Array.from(cropRecipes.values())
+export function generateCropRotations(cropRecipes: Recipe[], fertilityTarget: number): Map<string, Recipe> {
   const cropRotations = new Map<string, Recipe>(
-    recipes.flatMap(
-      (value1, index) => recipes.slice(index + 1).map((value2) => createCropRotation(fertilityTarget, value1, value2))
+    cropRecipes.flatMap(
+      (value1, index) => cropRecipes.slice(index + 1).map((value2) => createCropRotation(fertilityTarget, value1, value2))
     ).map((cropRotation) => [cropRotation.name, cropRotation]))
   return cropRotations
 }

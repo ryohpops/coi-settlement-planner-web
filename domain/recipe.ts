@@ -39,6 +39,16 @@ const productRecipeData: Recipe[] = [
     ingredients: new Map([["Animal Feed", 15.1]])
   },
   {
+    name: "Eggs", production_time: 60,
+    products: new Map([["Chicken Carcass", 10], ["Eggs", 7.3]]),
+    ingredients: new Map([["Animal Feed", 15.1]])
+  },
+  {
+    name: "Animal Feed", production_time: 10,
+    products: new Map([["Animal Feed", 18]]),
+    ingredients: new Map([["Soybean", 10]])
+  },
+  {
     name: "Tofu", production_time: 40,
     products: new Map([["Tofu", 8], ["Animal Feed", 3]]),
     ingredients: new Map([["Soybean", 6]])
