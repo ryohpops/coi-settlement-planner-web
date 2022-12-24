@@ -1,4 +1,4 @@
-import Solver, { CoefficientsOfVariable, Constraints, Ints, Variables } from "javascript-lp-solver"
+import Solver, { CoefficientsOfVariable, Constraints, Ints, Options, Variables } from "javascript-lp-solver"
 import { generateCropRotations } from "./cropRotation"
 import { allFoods, allItems, Food, Item } from "./item"
 import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
@@ -17,14 +17,21 @@ export interface RecipeResult {
   times: number
 }
 export interface Result {
+  requestId: string
+  feasible: boolean
   itemResults: Map<string, ItemResult>
   recipeResults: Map<string, RecipeResult>
 }
 
+const solverOptions: Options = {
+  timeout: 5000,
+  tolerance: 0.05
+}
+
 export function solve(
-  population: number, demandAdjustment: number,
+  requestId: string, population: number, demandAdjustment: number,
   foodsInUse: string[], farmVariant: FarmVariant, fertilityTarget: number
-): Result | undefined {
+): Result {
   const itemResults = new Map<string, ItemResult>()
   allItems.forEach((item, itemName) =>
     itemResults.set(itemName, { item: item, ins: new Map(), outs: new Map(), transientDemand: 0 })
@@ -85,10 +92,14 @@ export function solve(
     opType: "min",
     constraints: constraints,
     variables: variables,
-    ints: ints
+    ints: ints,
+    options: solverOptions
   })
   if (solverResult.feasible === false) {
-    return undefined
+    return {
+      requestId: requestId, feasible: false,
+      itemResults: new Map(), recipeResults: new Map()
+    }
   }
 
   cropRotations.forEach((cropRotation, cropRotationName) => {
@@ -106,6 +117,7 @@ export function solve(
   })
 
   return {
+    requestId: requestId, feasible: true,
     itemResults: new Map(Array.from(itemResults).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)),
     recipeResults: new Map(Array.from(recipeResults).filter(([recipeName, recipe]) => recipe.times > 0))
   }

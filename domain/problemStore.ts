@@ -4,6 +4,7 @@ import { immer } from "zustand/middleware/immer"
 import { allFoods } from "./item"
 import { FarmVariant, FARM_VARIANT } from "./recipe"
 import { Result, solve } from "./solver"
+import { Params } from "./solverWorker"
 
 interface ProblemState {
   population: number
@@ -12,6 +13,10 @@ interface ProblemState {
   foodsInUse: string[]
   farmVariant: FarmVariant
   fertilityTarget: number
+
+  solverWorker: Worker | undefined
+  isSolverRunning: boolean
+  latestRequestId: string
   feasible: boolean
   answer: Result
 }
@@ -23,9 +28,12 @@ interface ProblemAction {
   setFoodsInUse: (values: string[]) => void
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
+  onSolverFinished: (result: Result) => void
 }
 
 const emptyResult: Result = {
+  requestId: "empty",
+  feasible: false,
   itemResults: new Map(),
   recipeResults: new Map()
 }
@@ -37,54 +45,67 @@ const initialState: ProblemState = {
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
-  feasible: false,
+
+  solverWorker: undefined,
+  isSolverRunning: false,
+  latestRequestId: emptyResult.requestId,
+  feasible: emptyResult.feasible,
   answer: emptyResult
 }
 
 export const useProblemStore = create<ProblemState & ProblemAction>()(
-  immer((set) => ({
+  immer((set, get) => ({
     ...initialState,
-    feasible: true,
-    answer: solve(
-      initialState.population, initialState.consumptionChange + initialState.globalAdjustment,
-      initialState.foodsInUse, initialState.farmVariant, initialState.fertilityTarget
-    )!,
     setPopulation: (value) => set((state) => {
       state.population = value ?? 0
-      updateAnswer(state)
+      updateAnswer(state, get)
     }),
     setConsumptionChange: (value) => set((state) => {
       state.consumptionChange = value ?? 0
-      updateAnswer(state)
+      updateAnswer(state, get)
     }),
     setGlobalAdjustment: (value) => set((state) => {
       state.globalAdjustment = value ?? 0
-      updateAnswer(state)
+      updateAnswer(state, get)
     }),
     setFoodsInUse: (values) => set((state) => {
       state.foodsInUse = values.filter((key) => allFoods.has(key))
-      updateAnswer(state)
+      updateAnswer(state, get)
     }),
     setFarmVariant: (value) => set((state) => {
       state.farmVariant = value
-      updateAnswer(state)
+      updateAnswer(state, get)
     }),
     setFertilityTarget: (value) => set((state) => {
       state.fertilityTarget = value ?? 0
-      updateAnswer(state)
+      updateAnswer(state, get)
+    }),
+    onSolverFinished: (result) => set((state) => {
+      if (result.requestId === state.latestRequestId) {
+        state.isSolverRunning = false
+        state.feasible = result.feasible
+        if (result.feasible) {
+          state.answer = result
+        }
+      }
     })
   }))
 )
 
-function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>) {
-  const result = solve(
-    state.population, state.consumptionChange + state.globalAdjustment,
-    state.foodsInUse, state.farmVariant, state.fertilityTarget
-  )
-  if (result) {
-    state.feasible = true
-    state.answer = result
-  } else {
-    state.feasible = false
+function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>, get: () => ProblemState & ProblemAction) {
+  state.isSolverRunning = true
+  state.latestRequestId = Date.now().toString()
+
+  if (!state.solverWorker) {
+    state.solverWorker = new Worker(new URL("./solverWorker.ts", import.meta.url))
   }
+
+  const params: Params = {
+    requestId: state.latestRequestId, population: state.population,
+    demandAdjustment: state.consumptionChange + state.globalAdjustment,
+    foodsInUse: JSON.stringify(state.foodsInUse), farmVariant: state.farmVariant,
+    fertilityTarget: state.fertilityTarget
+  }
+  state.solverWorker.onmessage = (event: MessageEvent<Result>) => get().onSolverFinished(event.data)
+  state.solverWorker.postMessage(params)
 }

@@ -1,3 +1,5 @@
+import { CheckCircleTwoTone, WarningTwoTone } from "@ant-design/icons"
+import { Spin } from "antd"
 import dagre from "dagre"
 import ReactFlow, { Edge, Node, NodeTypes, Panel, Position } from "reactflow"
 import "reactflow/dist/style.css"
@@ -13,6 +15,7 @@ const nodeTypes: NodeTypes = {
 
 export default function PlanDisplay() {
   const answer = useProblemStore((state) => state.answer)
+  const isSolverRunning = useProblemStore((state) => state.isSolverRunning)
   const feasible = useProblemStore((state) => state.feasible)
 
   const graph = new dagre.graphlib.Graph()
@@ -59,10 +62,21 @@ export default function PlanDisplay() {
     node.position.y = graphNode.y - graphNode.height / 2
   })
 
+  let status: JSX.Element
+  if (isSolverRunning) {
+    status = <Spin />
+  } else {
+    if (feasible) {
+      status = <CheckCircleTwoTone />
+    } else {
+      status = <WarningTwoTone />
+    }
+  }
+
   return (
     <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
       <Panel position="bottom-right">
-        {feasible ? "Solved!" : "Unfeasible"}
+        {status}
       </Panel>
     </ReactFlow>
   )
