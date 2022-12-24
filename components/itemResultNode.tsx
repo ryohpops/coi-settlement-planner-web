@@ -7,7 +7,7 @@ export const ItemResultNodeWidth = 300
 export const ItemResultNodeHeight = 200
 
 const options = {
-  chartArea: { width: "80%" },
+  chartArea: { left: 24, top: 6, width: "80%", height: "80%" },
   isStacked: true,
   hAxis: {
     minValue: 0,

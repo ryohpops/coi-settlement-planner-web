@@ -23,7 +23,7 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
   } else {
     throw new Error(`Invalid recipes were given for createCropRotation.`)
   }
-  equilibrium = Math.max(equilibrium, fertilityTarget)
+  equilibrium = Math.max(equilibrium, fertilityTarget / 100)
 
   const products = new Map<string, number>()
   cropRecipes.forEach((recipe) => recipe.products.forEach((value, key) => products.set(key, value * equilibrium)))
