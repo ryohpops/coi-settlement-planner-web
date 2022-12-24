@@ -55,8 +55,14 @@ export function solve(
   }
 
   const recipeResults = new Map<string, RecipeResult>()
-  cropRotations.forEach((recipe, name) => recipeResults.set(name, { recipe: recipe, times: solverResult[name] ?? 0 }))
-  productRecipes.forEach((recipe, name) => recipeResults.set(name, { recipe: recipe, times: solverResult[name] ?? 0 }))
+  cropRotations.forEach((recipe, name) => recipeResults.set(
+    name,
+    { recipe: recipe, times: solverResult[name] ?? 0 }
+  ))
+  productRecipes.forEach((recipe, name) => recipeResults.set(
+    name,
+    { recipe: recipe, times: solverResult[name] ?? 0 }
+  ))
   const usedRecipeResults = new Map<string, RecipeResult>(
     Array.from(recipeResults).filter(([name, recipe]) => recipe.times > 0)
   )
@@ -68,13 +74,19 @@ export function solve(
       if (!itemResults.has(itemName)) {
         itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
       }
-      itemResults.get(itemName)!.ins.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE)
+      itemResults.get(itemName)!.ins.set(
+        recipeName,
+        amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE
+      )
     })
     recipe.ingredients.forEach((amount, itemName) => {
       if (!itemResults.has(itemName)) {
         itemResults.set(itemName, { item: getItem(itemName), ins: new Map(), outs: new Map() })
       }
-      itemResults.get(itemName)!.outs.set(recipeName, amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE)
+      itemResults.get(itemName)!.outs.set(
+        recipeName,
+        amount * (recipeResults.get(recipeName)?.times ?? 0) / recipe.production_time * TIME_SCALE
+      )
     })
   })
 

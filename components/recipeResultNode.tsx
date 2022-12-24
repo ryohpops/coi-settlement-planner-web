@@ -12,14 +12,16 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeResult>) {
         title={`Produce ${data.recipe.name}`} size="small"
         style={{ width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }}
       >
-        {`Count: ${data.times}`}
+        {`Need ${Math.ceil(data.times * 100) / 100} producers`}
       </Card>
-      {data.recipe.ingredients.size > 0 &&
-        <Handle type="target" position={Position.Left} />
-      }
-      {data.recipe.products.size > 0 &&
-        <Handle type="source" position={Position.Right} />
-      }
+      <Handle
+        type="target" position={Position.Left}
+        hidden={data.recipe.ingredients.size === 0}
+      />
+      <Handle
+        type="source" position={Position.Right}
+        hidden={data.recipe.products.size === 0}
+      />
     </>
   )
 }

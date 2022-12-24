@@ -43,12 +43,14 @@ export default function ItemResultNode({ data }: NodeProps<ItemResult>) {
           data={[items, ins, outs]} options={options}
         />
       </Card>
-      {data.ins.size > 0 &&
-        <Handle type="target" position={Position.Left} />
-      }
-      {data.outs.size > 0 &&
-        <Handle type="source" position={Position.Right} />
-      }
+      <Handle
+        type="target" position={Position.Left}
+        hidden={data.ins.size === 0}
+      />
+      <Handle
+        type="source" position={Position.Right}
+        hidden={data.outs.size === 0}
+      />
     </>
   )
 }
