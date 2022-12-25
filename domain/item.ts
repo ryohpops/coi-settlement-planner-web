@@ -16,7 +16,7 @@ export const categories = ["Carbs", "Protein", "Vitamins", "Treats"]
 const foodData: Food[] = [
   { name: "Potato", image: "", isFood: true, isCrop: true, category: "Carbs", feeds: 17 },
   { name: "Corn", image: "", isFood: true, isCrop: true, category: "Carbs", feeds: 25 },
-  { name: "Bread", image: "", isFood: true, category: "Carbs", feeds: 37, isCrop: false },
+  { name: "Bread", image: "", isFood: true, isCrop: false, category: "Carbs", feeds: 37 },
   { name: "Meat", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 27 },
   { name: "Eggs", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 25 },
   { name: "Tofu", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 41 },

@@ -27,8 +27,8 @@ declare module "javascript-lp-solver" {
     options?: Options
   }
   export interface Options {
-    timeout: number
-    tolerance: number
+    timeout?: number
+    tolerance?: number
   }
 
   export interface SingleGoalResult {
