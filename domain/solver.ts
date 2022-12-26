@@ -1,10 +1,9 @@
-import Solver, { CoefficientsOfVariable, Constraints, Ints, Options, Variables } from "javascript-lp-solver"
 import { generateCropRotations } from "./cropRotation"
 import { allFoods, allItems, Food, Item } from "./item"
 import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
 
 const TIME_SCALE = 60
-const FARM_COUNT = "Farm Count"
+const INITIAL_FARM_COUNT = 100
 
 export interface ItemResult {
   item: Item
@@ -21,11 +20,6 @@ export interface Result {
   feasible: boolean
   itemResults: Map<string, ItemResult>
   recipeResults: Map<string, RecipeResult>
-}
-
-const solverOptions: Options = {
-  timeout: 5000,
-  tolerance: 0.05
 }
 
 export function solve(
@@ -69,48 +63,60 @@ export function solve(
   }
 
   // Get crop with demands
-  const cropsWithDemands = Array.from(itemResults.values())
-    .filter((item) => item.item.isCrop && item.transientDemand > 0)
-  const cropRecipes = cropsWithDemands.map((crop) => getItem(farmingRecipes[farmVariant], crop.item.name))
+  const cropsWithDemands = new Map<string, ItemResult>(
+    Array.from(itemResults)
+      .filter(([itemName, item]) => item.item.isCrop && item.transientDemand > 0)
+  )
+  const cropRecipes = Array.from(cropsWithDemands)
+    .map(([cropName, crop]) => getItem(farmingRecipes[farmVariant], crop.item.name))
 
   // Resolve crop demands into crop rotation counts
-  const variables: Variables = {}
-  const cropRotations = generateCropRotations(cropRecipes, fertilityTarget)
-  cropRotations.forEach((cropRotation, cropRotationName) => {
-    addVariables(cropRotation, variables)
-    variables[cropRotationName][FARM_COUNT] = 1
+  const cropRotations = generateCropRotations(cropRecipes, fertilityTarget) //TODO: is this needed to be a Map?
+  const cropRotationResults = new Map<string, RecipeResult>(
+    Array.from(cropRotations.values())
+      .sort((a, b) => a.equilibrium - b.equilibrium)
+      .map((cropRotation) => [cropRotation.name, { recipe: cropRotation, times: INITIAL_FARM_COUNT }])
+  )
+
+  const yieldEstimation = new Map<string, number>()
+  cropRotationResults.forEach((cropRotation) => {
+    cropRotation.recipe.products.forEach((amount, cropName) => {
+      setOrSumItem(
+        yieldEstimation, cropName,
+        amount * cropRotation.times / cropRotation.recipe.production_time * TIME_SCALE
+      )
+    })
   })
 
-  const constraints: Constraints = {}
-  cropsWithDemands.forEach((crop) => constraints[crop.item.name] = { min: crop.transientDemand })
-
-  const ints: Ints = {}
-  cropRotations.forEach((cropRotation, cropRotationName) => ints[cropRotationName] = 1)
-
-  const solverResult = Solver.Solve({
-    optimize: FARM_COUNT,
-    opType: "min",
-    constraints: constraints,
-    variables: variables,
-    ints: ints,
-    options: solverOptions
-  })
-  if (solverResult.feasible === false) {
-    return {
-      requestId: requestId, feasible: false,
-      itemResults: new Map(), recipeResults: new Map()
-    }
+  let movement = Number.MAX_SAFE_INTEGER
+  while (movement > 0) {
+    movement = 0
+    cropRotationResults.forEach((cropRotation) => {
+      const normalizedCropYields = new Map<string, number>(Array.from(cropRotation.recipe.products)
+        .map(([cropName, amount]) => [cropName, amount / cropRotation.recipe.production_time * TIME_SCALE])
+      )
+      const canSubtract = Array.from(normalizedCropYields)
+        .every(([cropName, amount]) => {
+          return getItem(yieldEstimation, cropName) - getItem(normalizedCropYields, cropName)
+            > getItem(cropsWithDemands, cropName).transientDemand
+        })
+      if (canSubtract) {
+        cropRotation.times--
+        normalizedCropYields.forEach((amount, cropName) =>
+          yieldEstimation.set(cropName, getItem(yieldEstimation, cropName) - amount))
+        movement++
+      }
+    })
   }
 
-  cropRotations.forEach((cropRotation, cropRotationName) => {
-    const count = solverResult[cropRotationName] ?? 0
-    if (count > 0) {
-      recipeResults.set(cropRotationName, { recipe: cropRotation, times: count })
-      cropRotation.products.forEach((amount, cropName) => {
+  cropRotationResults.forEach((cropRotation, cropRotationName) => {
+    if (cropRotation.times > 0) {
+      recipeResults.set(cropRotationName, cropRotation)
+      cropRotation.recipe.products.forEach((amount, cropName) => {
         setOrSumItem(
           getItem(itemResults, cropName).ins,
           cropRotationName,
-          amount * count / cropRotation.production_time * TIME_SCALE
+          amount * cropRotation.times / cropRotation.recipe.production_time * TIME_SCALE
         )
       })
     }
@@ -154,17 +160,6 @@ function resolveItem(item: ItemResult, itemResults: Map<string, ItemResult>, rec
     ingredient.transientDemand += amount * cycle
   })
   producer.times += cycle
-}
-
-function addVariables(recipe: Recipe, variables: Variables) {
-  const coefficients: CoefficientsOfVariable = {}
-  recipe.products.forEach((amount, product) => {
-    coefficients[product] = amount / recipe.production_time * TIME_SCALE
-  })
-  recipe.ingredients.forEach((amount, ingredient) => {
-    coefficients[ingredient] = -amount / recipe.production_time * TIME_SCALE
-  })
-  variables[recipe.name] = coefficients
 }
 
 function getItem<T>(map: Map<string, T>, key: string): T {

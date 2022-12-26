@@ -2,15 +2,19 @@ import { Recipe } from "./recipe"
 
 const DAY_LENGTH = 2
 
-export function generateCropRotations(cropRecipes: Recipe[], fertilityTarget: number): Map<string, Recipe> {
-  const cropRotations = new Map<string, Recipe>(
+export interface CropRotation extends Recipe {
+  equilibrium: number
+}
+
+export function generateCropRotations(cropRecipes: Recipe[], fertilityTarget: number): Map<string, CropRotation> {
+  const cropRotations = new Map<string, CropRotation>(
     cropRecipes.flatMap(
       (value1, index) => cropRecipes.slice(index + 1).map((value2) => createCropRotation(fertilityTarget, value1, value2))
     ).map((cropRotation) => [cropRotation.name, cropRotation]))
   return cropRotations
 }
 
-function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): Recipe {
+function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): CropRotation {
   let equilibrium = 1
   const rotationTime = cropRecipes.reduce((sum, recipe) => sum + recipe.production_time, 0)
   if (cropRecipes.length == 1) {
@@ -31,7 +35,8 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
     name: cropRecipes.map((recipe) => recipe.name).join("/"),
     production_time: rotationTime,
     products: products,
-    ingredients: new Map()
+    ingredients: new Map(),
+    equilibrium: equilibrium
   }
 }
 
