@@ -1,5 +1,5 @@
 import { generateCropRotations } from "./cropRotation"
-import { allFoods, allItems, Food, Item, VIRTUAL_ITEM } from "./item"
+import { allFoods, allItems, Item, VIRTUAL_ITEM } from "./item"
 import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
 import * as SolverAPI from "./solverApi"
 
