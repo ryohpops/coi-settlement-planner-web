@@ -1,9 +1,9 @@
-import { generateCropRotations } from "./cropRotation"
-import { allFoods, allItems, Food, Item } from "./item"
-import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
+import { generateCropRotations } from "./cropRotation";
+import { allFoods, allItems, Food, Item } from "./item";
+import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe";
+import * as SolverAPI from "./solverApi";
 
 const TIME_SCALE = 60
-const INITIAL_FARM_COUNT = 100
 
 export interface ItemResult {
   item: Item
@@ -16,16 +16,15 @@ export interface RecipeResult {
   times: number
 }
 export interface Result {
-  requestId: string
   feasible: boolean
   itemResults: Map<string, ItemResult>
   recipeResults: Map<string, RecipeResult>
 }
 
-export function solve(
-  requestId: string, population: number, demandAdjustment: number,
+export async function solve(
+  population: number, demandAdjustment: number,
   foodsInUse: string[], farmVariant: FarmVariant, fertilityTarget: number
-): Result {
+): Promise<Result> {
   const itemResults = new Map<string, ItemResult>()
   allItems.forEach((item, itemName) =>
     itemResults.set(itemName, { item: item, ins: new Map(), outs: new Map(), transientDemand: 0 })
@@ -75,43 +74,51 @@ export function solve(
   const cropRotationResults = new Map<string, RecipeResult>(
     Array.from(cropRotations.values())
       .sort((a, b) => a.equilibrium - b.equilibrium)
-      .map((cropRotation) => [cropRotation.name, { recipe: cropRotation, times: INITIAL_FARM_COUNT }])
+      .map((cropRotation) => [cropRotation.name, { recipe: cropRotation, times: 0 }])
   )
 
-  const yieldEstimation = new Map<string, number>()
-  cropRotationResults.forEach((cropRotation) => {
-    cropRotation.recipe.products.forEach((amount, cropName) => {
-      setOrSumItem(
-        yieldEstimation, cropName,
-        amount * cropRotation.times / cropRotation.recipe.production_time * TIME_SCALE
-      )
+  const apiRecipes: SolverAPI.Recipe[] = []
+  cropRotations.forEach((cropRotation, cropRotationName) => {
+    const apiRecipe: SolverAPI.Recipe = { name: cropRotationName, products: {}, ingredients: {} }
+    cropRotation.products.forEach((amount, productName) => {
+      apiRecipe.products[productName] = amount / cropRotation.production_time * TIME_SCALE
     })
+    cropRotation.ingredients.forEach((amount, ingredientName) => {
+      apiRecipe.ingredients[ingredientName] = amount / cropRotation.production_time * TIME_SCALE
+    })
+    apiRecipes.push(apiRecipe)
   })
 
-  let movement = Number.MAX_SAFE_INTEGER
-  while (movement > 0) {
-    movement = 0
-    cropRotationResults.forEach((cropRotation) => {
-      const normalizedCropYields = new Map<string, number>(Array.from(cropRotation.recipe.products)
-        .map(([cropName, amount]) => [cropName, amount / cropRotation.recipe.production_time * TIME_SCALE])
-      )
-      const canSubtract = Array.from(normalizedCropYields)
-        .every(([cropName, amount]) => {
-          return getItem(yieldEstimation, cropName) - getItem(normalizedCropYields, cropName)
-            > getItem(cropsWithDemands, cropName).transientDemand
-        })
-      if (canSubtract) {
-        cropRotation.times--
-        normalizedCropYields.forEach((amount, cropName) =>
-          yieldEstimation.set(cropName, getItem(yieldEstimation, cropName) - amount))
-        movement++
-      }
-    })
+  const apiDemands: { [name: string]: number } = {}
+  cropsWithDemands.forEach((crop, cropName) => apiDemands[cropName] = crop.transientDemand)
+
+  const solveInput: SolverAPI.SolveInput = {
+    recipes: apiRecipes, demands: apiDemands
   }
 
+  const apiResponse = await fetch(SolverAPI.endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(solveInput)
+  })
+  let apiResponseBody: SolverAPI.SolveResult
+  if (apiResponse.ok) {
+    apiResponseBody = await apiResponse.json()
+    if (!apiResponseBody.isSolved) {
+      return {
+        feasible: false, itemResults: new Map(), recipeResults: new Map()
+      }
+    }
+  } else {
+    throw new Error("Failed to call Solver API.");
+  }
+  const result = apiResponseBody.result!
+
   cropRotationResults.forEach((cropRotation, cropRotationName) => {
-    if (cropRotation.times > 0) {
+    if (cropRotationName in result && result[cropRotationName] > 0) {
+      cropRotation.times = result[cropRotationName]
       recipeResults.set(cropRotationName, cropRotation)
+
       cropRotation.recipe.products.forEach((amount, cropName) => {
         setOrSumItem(
           getItem(itemResults, cropName).ins,
@@ -123,7 +130,7 @@ export function solve(
   })
 
   return {
-    requestId: requestId, feasible: true,
+    feasible: true,
     itemResults: new Map(Array.from(itemResults).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)),
     recipeResults: new Map(Array.from(recipeResults).filter(([recipeName, recipe]) => recipe.times > 0))
   }

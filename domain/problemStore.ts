@@ -4,7 +4,6 @@ import { immer } from "zustand/middleware/immer"
 import { allFoods } from "./item"
 import { FarmVariant, FARM_VARIANT } from "./recipe"
 import { Result, solve } from "./solver"
-import { Params } from "./solverWorker"
 
 interface ProblemState {
   population: number
@@ -14,9 +13,7 @@ interface ProblemState {
   farmVariant: FarmVariant
   fertilityTarget: number
 
-  solverWorker: Worker | undefined
   isSolverRunning: boolean
-  latestRequestId: string
   feasible: boolean
   answer: Result
 }
@@ -32,7 +29,6 @@ interface ProblemAction {
 }
 
 const emptyResult: Result = {
-  requestId: "empty",
   feasible: false,
   itemResults: new Map(),
   recipeResults: new Map()
@@ -46,9 +42,7 @@ const initialState: ProblemState = {
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
 
-  solverWorker: undefined,
   isSolverRunning: false,
-  latestRequestId: emptyResult.requestId,
   feasible: emptyResult.feasible,
   answer: emptyResult
 }
@@ -81,12 +75,10 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
       updateAnswer(state, get)
     }),
     onSolverFinished: (result) => set((state) => {
-      if (result.requestId === state.latestRequestId) {
-        state.isSolverRunning = false
-        state.feasible = result.feasible
-        if (result.feasible) {
-          state.answer = result
-        }
+      state.isSolverRunning = false
+      state.feasible = result.feasible
+      if (result.feasible) {
+        state.answer = result
       }
     })
   }))
@@ -94,18 +86,8 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
 
 function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>, get: () => ProblemState & ProblemAction) {
   state.isSolverRunning = true
-  state.latestRequestId = Date.now().toString()
-
-  if (!state.solverWorker) {
-    state.solverWorker = new Worker(new URL("./solverWorker.ts", import.meta.url))
-  }
-
-  const params: Params = {
-    requestId: state.latestRequestId, population: state.population,
-    demandAdjustment: state.consumptionChange + state.globalAdjustment,
-    foodsInUse: JSON.stringify(state.foodsInUse), farmVariant: state.farmVariant,
-    fertilityTarget: state.fertilityTarget
-  }
-  state.solverWorker.onmessage = (event: MessageEvent<Result>) => get().onSolverFinished(event.data)
-  state.solverWorker.postMessage(params)
+  solve(
+    state.population, state.consumptionChange + state.globalAdjustment,
+    state.foodsInUse, state.farmVariant, state.fertilityTarget
+  ).then((result) => get().onSolverFinished(result))
 }
