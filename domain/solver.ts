@@ -1,6 +1,6 @@
 import { generateCropRotations } from "./cropRotation"
 import { allFoods, allItems, Item, VIRTUAL_ITEM } from "./item"
-import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
+import { farmingRecipes, FarmVariant, productRecipesByName, productRecipesByPrimaryProduct, Recipe } from "./recipe"
 import * as SolverAPI from "./solverApi"
 
 const TIME_SCALE = 60
@@ -23,7 +23,7 @@ export interface Result {
 
 export async function solve(
   population: number, demandAdjustment: number,
-  foodsInUse: string[], farmVariant: FarmVariant, fertilityTarget: number
+  foodsInUse: string[], farmVariant: FarmVariant, fertilityTarget: number, recipesInUse: string[]
 ): Promise<Result> {
   const itemResults = new Map<string, ItemResult>()
   allItems.forEach((item, itemName) =>
@@ -31,7 +31,9 @@ export async function solve(
   )
   const recipeResults = new Map<string, RecipeResult>()
 
-  const isProductSolved = await solveProduct(itemResults, recipeResults, population, demandAdjustment, foodsInUse)
+  const isProductSolved = await solveProduct(
+    itemResults, recipeResults, population, demandAdjustment, foodsInUse, recipesInUse
+  )
   if (!isProductSolved) {
     return {
       feasible: false, itemResults: new Map(), recipeResults: new Map()
@@ -54,7 +56,7 @@ export async function solve(
 
 async function solveProduct(
   itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>,
-  population: number, demandAdjustment: number, foodsInUse: string[]
+  population: number, demandAdjustment: number, foodsInUse: string[], recipesInUse: string[]
 ): Promise<boolean> {
   const foodDemands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
   foodDemands.forEach((demand, foodName) => {
@@ -64,8 +66,15 @@ async function solveProduct(
   })
 
   const solverRecipes: SolverAPI.Recipe[] = []
-  productRecipes.forEach((recipe, recipeName) => {
-    const apiRecipe: SolverAPI.Recipe = { name: recipeName, products: {}, ingredients: {} }
+  productRecipesByPrimaryProduct.forEach((recipes, productName) => {
+    let recipe: Recipe
+    if (recipes.length === 1) {
+      recipe = recipes[0]
+    } else {
+      recipe = recipes.filter((recipe) => recipesInUse.includes(recipe.name))[0]
+    }
+
+    const apiRecipe: SolverAPI.Recipe = { name: recipe.name, products: {}, ingredients: {} }
     recipe.products.forEach((amount, productName) => {
       apiRecipe.products[productName] = amount / recipe.production_time * TIME_SCALE
     })
@@ -87,7 +96,7 @@ async function solveProduct(
     return false
   }
   Object.entries(solverAnswer.result!).forEach(([recipeName, times]) => {
-    const recipe = getMapItem(productRecipes, recipeName)
+    const recipe = getMapItem(productRecipesByName, recipeName)
     recipeResults.set(recipeName, { recipe: recipe, times: times })
 
     recipe.products.forEach((amount, itemName) => {
