@@ -25,6 +25,7 @@ interface ProblemAction {
   setFoodsInUse: (values: string[]) => void
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
+  refreshAnswer: () => void
   onSolverFinished: (result: Result) => void
 }
 
@@ -74,6 +75,7 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
       state.fertilityTarget = value ?? 0
       updateAnswer(state, get)
     }),
+    refreshAnswer: () => set((state) => updateAnswer(state, get)),
     onSolverFinished: (result) => set((state) => {
       state.isSolverRunning = false
       state.feasible = result.feasible

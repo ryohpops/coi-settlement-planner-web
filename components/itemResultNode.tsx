@@ -1,6 +1,7 @@
 import { Card } from "antd"
 import { Chart } from "react-google-charts"
 import { Handle, NodeProps, Position } from "reactflow"
+import { VIRTUAL_ITEM } from "../domain/item"
 import { ItemResult } from "../domain/solver"
 
 export const ItemResultNodeWidth = 300
@@ -21,12 +22,12 @@ export default function ItemResultNode({ data }: NodeProps<ItemResult>) {
   const outs: (string | number)[] = ["Out"]
 
   data.ins.forEach((amount, relation) => {
-    items.push(`From ${relation}`)
+    items.push(relation)
     ins.push(amount)
     outs.push(0)
   })
   data.outs.forEach((amount, relation) => {
-    items.push(`To ${relation}`)
+    items.push(relation)
     ins.push(0)
     outs.push(amount)
   })
@@ -49,7 +50,7 @@ export default function ItemResultNode({ data }: NodeProps<ItemResult>) {
       />
       <Handle
         type="source" position={Position.Right}
-        hidden={data.outs.size === 0}
+        hidden={data.outs.size === 0 || (data.outs.size === 1 && data.outs.has(VIRTUAL_ITEM.Demand))}
       />
     </>
   )

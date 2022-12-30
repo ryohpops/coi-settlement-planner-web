@@ -1,6 +1,7 @@
 import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space, Tree } from "antd"
 import { SliderMarks } from "antd/es/slider"
 import type { DataNode } from "antd/es/tree"
+import { useEffect } from "react"
 import { allFoods, categories } from "../domain/item"
 import { useProblemStore } from "../domain/problemStore"
 import { FARM_VARIANT } from "../domain/recipe"
@@ -27,6 +28,8 @@ const fertilityTargetMarks: SliderMarks = {
 
 export default function PlanInput() {
   const problemStore = useProblemStore()
+
+  useEffect(() => problemStore.refreshAnswer(), [])
 
   return (
     <Form layout="vertical">

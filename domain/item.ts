@@ -11,6 +11,11 @@ export interface Food extends Item {
   feeds: number
 }
 
+export const VIRTUAL_ITEM = {
+  Demand: "Demand"
+} as const
+export type VirtualItem = typeof VIRTUAL_ITEM[keyof typeof VIRTUAL_ITEM]
+
 export const categories = ["Carbs", "Protein", "Vitamins", "Treats"]
 
 const foodData: Food[] = [

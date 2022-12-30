@@ -1,5 +1,5 @@
 import { generateCropRotations } from "./cropRotation";
-import { allFoods, allItems, Food, Item } from "./item";
+import { allFoods, allItems, Food, Item, VIRTUAL_ITEM } from "./item";
 import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe";
 import * as SolverAPI from "./solverApi";
 
@@ -34,31 +34,24 @@ export async function solve(
   productRecipes.forEach((recipe, recipeName) =>
     recipeResults.set(recipeName, { recipe: recipe, times: 0 })
   )
-  farmingRecipes[farmVariant].forEach((recipe, recipeName) =>
-    recipeResults.set(recipeName, { recipe: recipe, times: 0 })
-  )
 
   const foodDemands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
-  foodDemands.forEach((demand, foodName) =>
-    getMapItem(itemResults, foodName).transientDemand = demand
-  )
+  foodDemands.forEach((demand, foodName) => {
+    const food = getMapItem(itemResults, foodName)
+    food.transientDemand = demand
+    food.outs.set(VIRTUAL_ITEM.Demand, demand)
+  })
 
-  // Resolve food demands into intermediate item demands
-  Array.from(itemResults.values())
-    .filter((item) => item.item.isFood && !item.item.isCrop && item.transientDemand > 0)
-    .forEach((food) => resolveItem(food, itemResults, recipeResults))
-
-  // Resolve intermediate-item demands into crop demands
-  const intermediateItems = Array.from(itemResults.values())
-    .filter((item) => !item.item.isFood && !item.item.isCrop)
+  // Resolve all item demands into crop demands
   let resolved = Number.MAX_SAFE_INTEGER
   while (resolved > 0) {
     resolved = 0
-    intermediateItems.filter((item) => item.transientDemand > 0)
-      .forEach((item) => {
+    itemResults.forEach((item) => {
+      if (!item.item.isCrop && item.transientDemand > 0) {
         resolveItem(item, itemResults, recipeResults)
         resolved++
-      })
+      }
+    })
   }
 
   // Get crop with demands
@@ -160,12 +153,12 @@ function resolveItem(item: ItemResult, itemResults: Map<string, ItemResult>, rec
   const times = item.transientDemand / getMapItem(producer.recipe.products, producer.recipe.primaryProduct)
   producer.recipe.products.forEach((amount, itemName) => {
     const product = getMapItem(itemResults, itemName)
-    setOrSumItem(product.ins, itemName, amount * times)
+    setOrSumItem(product.ins, producer.recipe.name, amount * times)
     product.transientDemand -= amount * times
   })
   producer.recipe.ingredients.forEach((amount, itemName) => {
     const ingredient = getMapItem(itemResults, itemName)
-    setOrSumItem(ingredient.outs, itemName, amount * times)
+    setOrSumItem(ingredient.outs, producer.recipe.name, amount * times)
     ingredient.transientDemand += amount * times
   })
   producer.times += times
