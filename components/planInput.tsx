@@ -8,14 +8,17 @@ import { FARM_VARIANT } from "../domain/recipe"
 
 const treeData = function () {
   const treeData: DataNode[] = []
+
+  const foods: DataNode = { key: "Foods", title: "Foods", children: [] }
+  treeData.push(foods)
   categories
     .map<DataNode>((category) => (
       { key: category, title: category, children: [] }
     ))
-    .forEach((node) => treeData.push(node))
+    .forEach((node) => foods.children!.push(node))
   allFoods.forEach((item, name) => {
-    treeData.find((node) => node.key === item.category)
-      ?.children?.push({ key: name, title: name })
+    foods.children!.find((node) => node.key === item.category)
+      ?.children!.push({ key: name, title: name })
   })
   return treeData
 }()

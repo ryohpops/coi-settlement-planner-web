@@ -1,7 +1,7 @@
 import { CheckCircleTwoTone, WarningTwoTone } from "@ant-design/icons"
 import { Spin } from "antd"
 import dagre from "dagre"
-import ReactFlow, { Edge, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
+import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
 import "reactflow/dist/style.css"
 import { useProblemStore } from "../domain/problemStore"
 import { ItemResult, RecipeResult } from "../domain/solver"
@@ -84,6 +84,7 @@ function PlanDisplayInternal() {
 
   return (
     <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
+      <MiniMap pannable zoomable position="top-right" />
       <Panel position="bottom-right">
         {status}
       </Panel>
