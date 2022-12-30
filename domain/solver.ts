@@ -1,7 +1,7 @@
-import { generateCropRotations } from "./cropRotation";
-import { allFoods, allItems, Food, Item, VIRTUAL_ITEM } from "./item";
-import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe";
-import * as SolverAPI from "./solverApi";
+import { generateCropRotations } from "./cropRotation"
+import { allFoods, allItems, Food, Item, VIRTUAL_ITEM } from "./item"
+import { farmingRecipes, FarmVariant, productRecipes, Recipe } from "./recipe"
+import * as SolverAPI from "./solverApi"
 
 const TIME_SCALE = 60
 
@@ -29,11 +29,7 @@ export async function solve(
   allItems.forEach((item, itemName) =>
     itemResults.set(itemName, { item: item, ins: new Map(), outs: new Map(), transientDemand: 0 })
   )
-
   const recipeResults = new Map<string, RecipeResult>()
-  productRecipes.forEach((recipe, recipeName) =>
-    recipeResults.set(recipeName, { recipe: recipe, times: 0 })
-  )
 
   const foodDemands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
   foodDemands.forEach((demand, foodName) => {
@@ -42,84 +38,92 @@ export async function solve(
     food.outs.set(VIRTUAL_ITEM.Demand, demand)
   })
 
-  // Resolve all item demands into crop demands
-  let resolved = Number.MAX_SAFE_INTEGER
-  while (resolved > 0) {
-    resolved = 0
-    itemResults.forEach((item) => {
-      if (!item.item.isCrop && item.transientDemand > 0) {
-        resolveItem(item, itemResults, recipeResults)
-        resolved++
-      }
+  const productSolverRecipes: SolverAPI.Recipe[] = []
+  productRecipes.forEach((recipe, recipeName) => {
+    const apiRecipe: SolverAPI.Recipe = { name: recipeName, products: {}, ingredients: {} }
+    recipe.products.forEach((amount, productName) => {
+      apiRecipe.products[productName] = amount / recipe.production_time * TIME_SCALE
     })
+    recipe.ingredients.forEach((amount, ingredientName) => {
+      apiRecipe.ingredients[ingredientName] = amount / recipe.production_time * TIME_SCALE
+    })
+    productSolverRecipes.push(apiRecipe)
+  })
+
+  const productSolverDemands: { [name: string]: number } = {}
+  foodDemands.forEach((amount, foodName) => productSolverDemands[foodName] = amount)
+
+  const productSolverCrops = Array.from(allItems.values())
+    .filter((item) => item.isCrop)
+    .map((item) => item.name)
+
+  const productSolverAnswer = await SolverAPI.callProductSolver(productSolverRecipes, productSolverDemands, productSolverCrops)
+  if (!productSolverAnswer.isSolved) {
+    return {
+      feasible: false, itemResults: new Map(), recipeResults: new Map()
+    }
   }
+  Object.entries(productSolverAnswer.result!).forEach(([recipeName, times]) => {
+    const recipe = getMapItem(productRecipes, recipeName)
+    recipeResults.set(recipeName, { recipe: recipe, times: times })
 
-  // Get crop with demands
-  const cropsWithDemands = new Map<string, ItemResult>(
-    Array.from(itemResults)
-      .filter(([itemName, item]) => item.item.isCrop && item.transientDemand > 0)
-  )
-  const cropRecipes = Array.from(cropsWithDemands)
-    .map(([cropName, crop]) => getProducer(farmingRecipes[farmVariant], crop.item.name))
+    recipe.products.forEach((amount, itemName) => {
+      setOrSumItem(
+        getMapItem(itemResults, itemName).ins,
+        recipeName,
+        amount * times / recipe.production_time * TIME_SCALE
+      )
+    })
+    recipe.ingredients.forEach((amount, itemName) => {
+      const item = getMapItem(itemResults, itemName)
+      const normalizedDemand = amount * times / recipe.production_time * TIME_SCALE
+      setOrSumItem(
+        item.outs,
+        recipeName,
+        normalizedDemand
+      )
+      item.transientDemand += normalizedDemand
+    })
+  })
 
-  // Resolve crop demands into crop rotation counts
+  const cropWithDemands = Array.from(itemResults.values())
+    .filter((item) => item.item.isCrop && item.transientDemand > 0)
+  const cropRecipes = cropWithDemands
+    .map((item) => Array.from(farmingRecipes[farmVariant].values()).find((recipe) => recipe.products.has(item.item.name))!)
   const cropRotations = generateCropRotations(cropRecipes, fertilityTarget) //TODO: is this needed to be a Map?
-  const cropRotationResults = new Map<string, RecipeResult>(
-    Array.from(cropRotations.values())
-      .sort((a, b) => a.equilibrium - b.equilibrium)
-      .map((cropRotation) => [cropRotation.name, { recipe: cropRotation, times: 0 }])
+  cropRotations.forEach((cropRotation, cropRotationName) =>
+    recipeResults.set(cropRotationName, { recipe: cropRotation, times: 0 })
   )
 
-  const apiRecipes: SolverAPI.Recipe[] = []
+  const farmSolverRecipes: SolverAPI.Recipe[] = []
   cropRotations.forEach((cropRotation, cropRotationName) => {
     const apiRecipe: SolverAPI.Recipe = { name: cropRotationName, products: {}, ingredients: {} }
     cropRotation.products.forEach((amount, productName) => {
       apiRecipe.products[productName] = amount / cropRotation.production_time * TIME_SCALE
     })
-    cropRotation.ingredients.forEach((amount, ingredientName) => {
-      apiRecipe.ingredients[ingredientName] = amount / cropRotation.production_time * TIME_SCALE
+    farmSolverRecipes.push(apiRecipe)
+  })
+
+  const farmSolverDemands: { [name: string]: number } = {}
+  cropWithDemands.forEach((item) => farmSolverDemands[item.item.name] = item.transientDemand)
+
+  const farmSolverAnswer = await SolverAPI.callFarmSolver(farmSolverRecipes, farmSolverDemands)
+  if (!farmSolverAnswer.isSolved) {
+    return {
+      feasible: false, itemResults: new Map(), recipeResults: new Map()
+    }
+  }
+  Object.entries(farmSolverAnswer.result!).forEach(([cropRotationName, times]) => {
+    const recipe = getMapItem(cropRotations, cropRotationName)
+    recipeResults.set(cropRotationName, { recipe: recipe, times: times })
+
+    recipe.products.forEach((amount, itemName) => {
+      setOrSumItem(
+        getMapItem(itemResults, itemName).ins,
+        cropRotationName,
+        amount * times / recipe.production_time * TIME_SCALE
+      )
     })
-    apiRecipes.push(apiRecipe)
-  })
-
-  const apiDemands: { [name: string]: number } = {}
-  cropsWithDemands.forEach((crop, cropName) => apiDemands[cropName] = crop.transientDemand)
-
-  const solveInput: SolverAPI.SolveInput = {
-    recipes: apiRecipes, demands: apiDemands
-  }
-
-  const apiResponse = await fetch(SolverAPI.endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(solveInput)
-  })
-  let apiResponseBody: SolverAPI.SolveResult
-  if (apiResponse.ok) {
-    apiResponseBody = await apiResponse.json()
-    if (!apiResponseBody.isSolved) {
-      return {
-        feasible: false, itemResults: new Map(), recipeResults: new Map()
-      }
-    }
-  } else {
-    throw new Error("Failed to call Solver API.");
-  }
-  const result = apiResponseBody.result!
-
-  cropRotationResults.forEach((cropRotation, cropRotationName) => {
-    if (cropRotationName in result && result[cropRotationName] > 0) {
-      cropRotation.times = result[cropRotationName]
-      recipeResults.set(cropRotationName, cropRotation)
-
-      cropRotation.recipe.products.forEach((amount, cropName) => {
-        setOrSumItem(
-          getMapItem(itemResults, cropName).ins,
-          cropRotationName,
-          amount * cropRotation.times / cropRotation.recipe.production_time * TIME_SCALE
-        )
-      })
-    }
   })
 
   return {
@@ -146,39 +150,11 @@ function calculateFoodDemands(population: number, adjustment: number, foodsInUse
   return demands
 }
 
-function resolveItem(item: ItemResult, itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>) {
-  const producerName = getProducer(productRecipes, item.item.name).name
-  const producer = getMapItem(recipeResults, producerName)
-
-  const times = item.transientDemand / getMapItem(producer.recipe.products, producer.recipe.primaryProduct)
-  producer.recipe.products.forEach((amount, itemName) => {
-    const product = getMapItem(itemResults, itemName)
-    setOrSumItem(product.ins, producer.recipe.name, amount * times)
-    product.transientDemand -= amount * times
-  })
-  producer.recipe.ingredients.forEach((amount, itemName) => {
-    const ingredient = getMapItem(itemResults, itemName)
-    setOrSumItem(ingredient.outs, producer.recipe.name, amount * times)
-    ingredient.transientDemand += amount * times
-  })
-  producer.times += times
-}
-
 function getMapItem<T>(map: Map<string, T>, key: string): T {
   if (map.has(key)) {
     return map.get(key)!
   } else {
     throw new Error(`Key ${key} does not exist. Item data and/or recipe data might be broken.`)
-  }
-}
-
-function getProducer(map: Map<string, Recipe>, itemName: string): Recipe {
-  const producer = Array.from(map.values())
-    .find((recipe) => recipe.primaryProduct === itemName)
-  if (producer) {
-    return producer
-  } else {
-    throw new Error(`A recipe primarily producing ${itemName} does not exist. Item data and/or recipe data might be broken.`);
   }
 }
 
