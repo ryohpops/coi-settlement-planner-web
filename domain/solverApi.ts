@@ -40,11 +40,9 @@ async function callSolver(endpoint: string, data: ProductSolverInput | FarmSolve
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   })
-  let responseBody: SolveResult
   if (response.ok) {
-    responseBody = await response.json()
+    return await response.json()
   } else {
     throw new Error("Failed to call Solver API.")
   }
-  return responseBody
 }
