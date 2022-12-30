@@ -17,7 +17,7 @@ export function generateCropRotations(cropRecipes: Recipe[], fertilityTarget: nu
 function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): CropRotation {
   let equilibrium = 1
   const rotationTime = cropRecipes.reduce((sum, recipe) => sum + recipe.production_time, 0)
-  if (cropRecipes.length == 1) {
+  if (cropRecipes.length === 1) {
     const crop = cropRecipes[0]
     equilibrium -= getFertilityUsage(crop) * 1.5 / crop.production_time * DAY_LENGTH * 100
   } else if (cropRecipes.length > 1) {

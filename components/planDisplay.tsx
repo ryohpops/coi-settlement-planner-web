@@ -41,24 +41,23 @@ function PlanDisplayInternal() {
     nodes.push(createItemNode(itemResult))
   })
   answer?.recipeResults.forEach((recipeResult, recipeName) => {
-    const recipeNodeName = "Produce " + recipeName
     graph.setNode(
-      recipeNodeName,
+      recipeName,
       { width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }
     )
     nodes.push(createRecipeNode(recipeResult))
     recipeResult.recipe.products.forEach((amount, name) => {
-      graph.setEdge(recipeNodeName, name)
+      graph.setEdge(recipeName, name)
       edges.push({
-        id: `${recipeNodeName} - ${name}`,
-        source: recipeNodeName, target: name
+        id: `${recipeName} - ${name}`,
+        source: recipeName, target: name
       })
     })
     recipeResult.recipe.ingredients.forEach((amount, name) => {
-      graph.setEdge(name, recipeNodeName)
+      graph.setEdge(name, recipeName)
       edges.push({
-        id: `${name} - ${recipeNodeName}`,
-        source: name, target: recipeNodeName
+        id: `${name} - ${recipeName}`,
+        source: name, target: recipeName
       })
     })
   })
@@ -101,7 +100,7 @@ function createItemNode(itemResult: ItemResult): Node<ItemResult> {
 
 function createRecipeNode(recipeResult: RecipeResult): Node<RecipeResult> {
   return {
-    id: "Produce " + recipeResult.recipe.name, type: "recipeResult",
+    id: recipeResult.recipe.name, type: "recipeResult",
     position: { x: 0, y: 0 }, data: recipeResult
   }
 }

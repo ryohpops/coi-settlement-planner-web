@@ -40,7 +40,7 @@ export async function solve(
 
   const foodDemands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
   foodDemands.forEach((demand, foodName) =>
-    getItem(itemResults, foodName).transientDemand = demand
+    getMapItem(itemResults, foodName).transientDemand = demand
   )
 
   // Resolve food demands into intermediate item demands
@@ -67,7 +67,7 @@ export async function solve(
       .filter(([itemName, item]) => item.item.isCrop && item.transientDemand > 0)
   )
   const cropRecipes = Array.from(cropsWithDemands)
-    .map(([cropName, crop]) => getItem(farmingRecipes[farmVariant], crop.item.name))
+    .map(([cropName, crop]) => getProducer(farmingRecipes[farmVariant], crop.item.name))
 
   // Resolve crop demands into crop rotation counts
   const cropRotations = generateCropRotations(cropRecipes, fertilityTarget) //TODO: is this needed to be a Map?
@@ -121,7 +121,7 @@ export async function solve(
 
       cropRotation.recipe.products.forEach((amount, cropName) => {
         setOrSumItem(
-          getItem(itemResults, cropName).ins,
+          getMapItem(itemResults, cropName).ins,
           cropRotationName,
           amount * cropRotation.times / cropRotation.recipe.production_time * TIME_SCALE
         )
@@ -154,26 +154,38 @@ function calculateFoodDemands(population: number, adjustment: number, foodsInUse
 }
 
 function resolveItem(item: ItemResult, itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>) {
-  const producer = getItem(recipeResults, item.item.name)
-  const cycle = item.transientDemand / getItem(producer.recipe.products, producer.recipe.name)
+  const producerName = getProducer(productRecipes, item.item.name).name
+  const producer = getMapItem(recipeResults, producerName)
+
+  const times = item.transientDemand / getMapItem(producer.recipe.products, producer.recipe.primaryProduct)
   producer.recipe.products.forEach((amount, itemName) => {
-    const product = getItem(itemResults, itemName)
-    setOrSumItem(product.ins, itemName, amount * cycle)
-    product.transientDemand -= amount * cycle
+    const product = getMapItem(itemResults, itemName)
+    setOrSumItem(product.ins, itemName, amount * times)
+    product.transientDemand -= amount * times
   })
   producer.recipe.ingredients.forEach((amount, itemName) => {
-    const ingredient = getItem(itemResults, itemName)
-    setOrSumItem(ingredient.outs, itemName, amount * cycle)
-    ingredient.transientDemand += amount * cycle
+    const ingredient = getMapItem(itemResults, itemName)
+    setOrSumItem(ingredient.outs, itemName, amount * times)
+    ingredient.transientDemand += amount * times
   })
-  producer.times += cycle
+  producer.times += times
 }
 
-function getItem<T>(map: Map<string, T>, key: string): T {
+function getMapItem<T>(map: Map<string, T>, key: string): T {
   if (map.has(key)) {
     return map.get(key)!
   } else {
-    throw new Error(`Key ${key} does not exists. Item data and/or recipe data might be broken.`)
+    throw new Error(`Key ${key} does not exist. Item data and/or recipe data might be broken.`)
+  }
+}
+
+function getProducer(map: Map<string, Recipe>, itemName: string): Recipe {
+  const producer = Array.from(map.values())
+    .find((recipe) => recipe.primaryProduct === itemName)
+  if (producer) {
+    return producer
+  } else {
+    throw new Error(`A recipe primarily producing ${itemName} does not exist. Item data and/or recipe data might be broken.`);
   }
 }
 

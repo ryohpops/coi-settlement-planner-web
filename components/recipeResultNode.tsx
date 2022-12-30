@@ -9,10 +9,10 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeResult>) {
   return (
     <>
       <Card
-        title={`Produce ${data.recipe.name}`} size="small"
+        title={data.recipe.name} size="small"
         style={{ width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }}
       >
-        {`Need ${Math.ceil(data.times * 100) / 100} producers`}
+        {`Need ${Math.ceil(data.times * 100) / 100} building(s)`}
       </Card>
       <Handle
         type="target" position={Position.Left}

@@ -13,7 +13,7 @@ const treeData = function () {
     ))
     .forEach((node) => treeData.push(node))
   allFoods.forEach((item, name) => {
-    treeData.find((node) => node.key == item.category)
+    treeData.find((node) => node.key === item.category)
       ?.children?.push({ key: name, title: name })
   })
   return treeData
