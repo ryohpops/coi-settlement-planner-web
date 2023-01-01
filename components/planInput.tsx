@@ -1,27 +1,11 @@
-import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space, Tree } from "antd"
+import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space } from "antd"
+import shallow from "zustand/shallow";
 import { SliderMarks } from "antd/es/slider"
-import type { DataNode } from "antd/es/tree"
 import { useEffect } from "react"
-import { allFoods, categories, MEDICAL_SUPPLIES } from "../domain/item"
+import { MEDICAL_SUPPLIES } from "../domain/item"
 import { useProblemStore } from "../domain/problemStore"
 import { FARM_VARIANT } from "../domain/recipe"
-
-const treeData = function () {
-  const treeData: DataNode[] = []
-
-  const foods: DataNode = { key: "Foods", title: "Foods", children: [] }
-  treeData.push(foods)
-  categories
-    .map<DataNode>((category) => (
-      { key: category, title: category, children: [] }
-    ))
-    .forEach((node) => foods.children!.push(node))
-  allFoods.forEach((item, name) => {
-    foods.children!.find((node) => node.key === item.category)
-      ?.children!.push({ key: name, title: name })
-  })
-  return treeData
-}()
+import FoodsInUseSelector from "./foodsInUseSelector"
 
 const fertilityTargetMarks: SliderMarks = {
   0: "0%",
@@ -30,7 +14,21 @@ const fertilityTargetMarks: SliderMarks = {
 }
 
 export default function PlanInput() {
-  const problemStore = useProblemStore()
+  const problemStore = useProblemStore((state) => ({
+    population: state.population,
+    setPopulation: state.setPopulation,
+    globalAdjustment: state.globalAdjustment,
+    setGlobalAdjustment: state.setGlobalAdjustment,
+    consumptionChange: state.consumptionChange,
+    setConsumptionChange: state.setConsumptionChange,
+    medicalSuppliesInUse: state.medicalSuppliesInUse,
+    setMedicalSuppliesInUse: state.setMedicalSuppliesInUse,
+    farmVariant: state.farmVariant,
+    setFarmVariant: state.setFarmVariant,
+    fertilityTarget: state.fertilityTarget,
+    setFertilityTarget: state.setFertilityTarget,
+    refreshAnswer: state.refreshAnswer
+  }), shallow)
 
   useEffect(() => problemStore.refreshAnswer(), [])
 
@@ -57,12 +55,7 @@ export default function PlanInput() {
 
       <Divider orientation="left">Foods in use</Divider>
       <Form.Item>
-        <Tree
-          selectable={false} checkable treeData={treeData}
-          defaultExpandAll={true}
-          defaultCheckedKeys={problemStore.foodsInUse}
-          onCheck={(keys) => problemStore.setFoodsInUse(keys as string[])}
-        />
+        <FoodsInUseSelector />
       </Form.Item>
       <Form.Item label="Total food consumption change by edicts">
         <InputNumber

@@ -1,15 +1,16 @@
-import { WritableDraft } from "immer/dist/internal"
-import create from "zustand"
-import { immer } from "zustand/middleware/immer"
-import { allFoods, MedicalSupplies, MEDICAL_SUPPLIES } from "./item"
-import { FarmVariant, FARM_VARIANT, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
-import { Result, solve } from "./solver"
+import { objectTraps, WritableDraft } from "immer/dist/internal";
+import create from "zustand";
+import { persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+import { allFoods, MedicalSupplies, MEDICAL_SUPPLIES } from "./item";
+import { FarmVariant, FARM_VARIANT, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe";
+import { Result, solve } from "./solver";
 
 interface ProblemState {
   population: number
-  consumptionChange: number
   globalAdjustment: number
   foodsInUse: string[]
+  consumptionChange: number
   medicalSuppliesInUse: MedicalSupplies
   farmVariant: FarmVariant
   fertilityTarget: number
@@ -19,12 +20,16 @@ interface ProblemState {
   feasible: boolean
   answer: Result
 }
+const ProblemStatePersistentItems = [
+  "population", "globalAdjustment", "foodsInUse", "consumptionChange",
+  "medicalSuppliesInUse", "farmVariant", "fertilityTarget", "recipesInUse"
+]
 
 interface ProblemAction {
   setPopulation: (value: number | null) => void
-  setConsumptionChange: (value: number | null) => void
   setGlobalAdjustment: (value: number | null) => void
   setFoodsInUse: (values: string[]) => void
+  setConsumptionChange: (value: number | null) => void
   setMedicalSuppliesInUse: (value: MedicalSupplies) => void
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
@@ -32,6 +37,8 @@ interface ProblemAction {
   refreshAnswer: () => void
   onSolverFinished: (result: Result) => void
 }
+
+const LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web"
 
 const emptyResult: Result = {
   feasible: false,
@@ -41,9 +48,9 @@ const emptyResult: Result = {
 
 const initialState: ProblemState = {
   population: 1000,
-  consumptionChange: 0,
-  globalAdjustment: 0,
+  globalAdjustment: 5,
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
+  consumptionChange: 0,
   medicalSuppliesInUse: MEDICAL_SUPPLIES.MedicalSupplies,
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
@@ -62,14 +69,10 @@ const initialState: ProblemState = {
 }
 
 export const useProblemStore = create<ProblemState & ProblemAction>()(
-  immer((set, get) => ({
+  persist(immer((set, get) => ({
     ...initialState,
     setPopulation: (value) => set((state) => {
       state.population = value ?? 0
-      updateAnswer(state, get)
-    }),
-    setConsumptionChange: (value) => set((state) => {
-      state.consumptionChange = value ?? 0
       updateAnswer(state, get)
     }),
     setGlobalAdjustment: (value) => set((state) => {
@@ -78,6 +81,10 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
     }),
     setFoodsInUse: (values) => set((state) => {
       state.foodsInUse = values.filter((key) => allFoods.has(key))
+      updateAnswer(state, get)
+    }),
+    setConsumptionChange: (value) => set((state) => {
+      state.consumptionChange = value ?? 0
       updateAnswer(state, get)
     }),
     setMedicalSuppliesInUse: (value) => set((state) => {
@@ -118,7 +125,18 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
         state.answer = result
       }
     })
-  }))
+  })), {
+    name: LOCAL_STORAGE_NAME,
+    partialize: (state) => {
+      return Object.fromEntries(
+        Object.entries(state).filter(([key]) => ProblemStatePersistentItems.includes(key))
+      )
+    },
+    merge: (persistedState, currentState) => {
+      return { ...currentState, ...persistedState as Partial<ProblemState & ProblemAction> }
+    },
+    version: 1
+  })
 )
 
 function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>, get: () => ProblemState & ProblemAction) {
