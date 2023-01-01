@@ -1,31 +1,28 @@
-import { Tree } from "antd";
-import { DataNode } from "antd/es/tree";
-import { useEffect, useMemo, useState } from "react";
-import { allFoods, categories } from "../domain/item";
-import { useProblemStore } from "../domain/problemStore";
+import { Tree } from "antd"
+import { DataNode } from "antd/es/tree"
+import dynamic from "next/dynamic"
+import { useMemo } from "react"
+import { allFoods, categories } from "../domain/item"
+import { useProblemStore } from "../domain/problemStore"
 
-export default function FoodsInUseSelector() {
-  const [treeData, parentKeys] = useMemo(() => createTreeData(), [])
+function FoodsInUseSelector() {
+  const treeData = useMemo(() => createTreeData(), [])
 
   const foodsInUse = useProblemStore((state) => state.foodsInUse)
   const setFoodsInUse = useProblemStore((state) => state.setFoodsInUse)
-  const [expandedKeys, setExpandedKeys] = useState<(string | number)[]>([])
-
-  // Avoid tree checkboxes out of sync problem on load
-  useEffect(() => setExpandedKeys(parentKeys), [])
 
   return (
     <Tree
       selectable={false} checkable treeData={treeData}
+      defaultExpandAll
       checkedKeys={foodsInUse}
       onCheck={(keys) => setFoodsInUse(keys as string[])}
-      expandedKeys={expandedKeys}
-      onExpand={(expandedKeys) => setExpandedKeys(expandedKeys)}
     />
   )
 }
+export default dynamic(() => Promise.resolve(FoodsInUseSelector), { ssr: false })
 
-function createTreeData(): [DataNode[], (string | number)[]] {
+function createTreeData(): DataNode[] {
   const treeData: DataNode[] = []
   const parentKeys: (string | number)[] = []
 
@@ -44,5 +41,5 @@ function createTreeData(): [DataNode[], (string | number)[]] {
     foods.children!.find((node) => node.key === item.category)
       ?.children!.push({ key: name, title: name })
   })
-  return [treeData, parentKeys]
+  return treeData
 }

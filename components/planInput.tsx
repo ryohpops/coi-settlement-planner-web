@@ -1,7 +1,8 @@
 import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space } from "antd"
-import shallow from "zustand/shallow";
 import { SliderMarks } from "antd/es/slider"
+import dynamic from "next/dynamic"
 import { useEffect } from "react"
+import shallow from "zustand/shallow"
 import { MEDICAL_SUPPLIES } from "../domain/item"
 import { useProblemStore } from "../domain/problemStore"
 import { FARM_VARIANT } from "../domain/recipe"
@@ -13,7 +14,7 @@ const fertilityTargetMarks: SliderMarks = {
   150: "150%"
 }
 
-export default function PlanInput() {
+function PlanInput() {
   const problemStore = useProblemStore((state) => ({
     population: state.population,
     setPopulation: state.setPopulation,
@@ -27,10 +28,10 @@ export default function PlanInput() {
     setFarmVariant: state.setFarmVariant,
     fertilityTarget: state.fertilityTarget,
     setFertilityTarget: state.setFertilityTarget,
-    refreshAnswer: state.refreshAnswer
+    updateAnswer: state.updateAnswer
   }), shallow)
 
-  useEffect(() => problemStore.refreshAnswer(), [])
+  useEffect(() => problemStore.updateAnswer(), [])
 
   return (
     <Form layout="vertical">
@@ -115,3 +116,4 @@ export default function PlanInput() {
     </Form>
   )
 }
+export default dynamic(() => Promise.resolve(PlanInput), { ssr: false })

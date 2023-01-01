@@ -1,10 +1,14 @@
-import { objectTraps, WritableDraft } from "immer/dist/internal";
-import create from "zustand";
-import { persist } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
-import { allFoods, MedicalSupplies, MEDICAL_SUPPLIES } from "./item";
-import { FarmVariant, FARM_VARIANT, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe";
-import { Result, solve } from "./solver";
+import { produce } from "immer"
+import { WritableDraft } from "immer/dist/internal"
+import { debounce } from "lodash"
+import create from "zustand"
+import { persist } from "zustand/middleware"
+import { immer } from "zustand/middleware/immer"
+import { allFoods, MedicalSupplies, MEDICAL_SUPPLIES } from "./item"
+import { FarmVariant, FARM_VARIANT, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
+import { Result, solve } from "./solver"
+
+const UPDATE_ANSWER_DELAY = 400
 
 interface ProblemState {
   population: number
@@ -34,7 +38,7 @@ interface ProblemAction {
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
   setRecipesInUse: (value: string) => void
-  refreshAnswer: () => void
+  updateAnswer: () => void
   onSolverFinished: (result: Result) => void
 }
 
@@ -69,55 +73,55 @@ const initialState: ProblemState = {
 }
 
 export const useProblemStore = create<ProblemState & ProblemAction>()(
-  persist(immer((set, get) => ({
+  persist(immer((set) => ({
     ...initialState,
     setPopulation: (value) => set((state) => {
       state.population = value ?? 0
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setGlobalAdjustment: (value) => set((state) => {
       state.globalAdjustment = value ?? 0
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setFoodsInUse: (values) => set((state) => {
       state.foodsInUse = values.filter((key) => allFoods.has(key))
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setConsumptionChange: (value) => set((state) => {
       state.consumptionChange = value ?? 0
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setMedicalSuppliesInUse: (value) => set((state) => {
       state.medicalSuppliesInUse = value
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setFarmVariant: (value) => set((state) => {
       state.farmVariant = value
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setFertilityTarget: (value) => set((state) => {
       state.fertilityTarget = value ?? 0
-      updateAnswer(state, get)
+      updateAnswerDebounced()
     }),
     setRecipesInUse: (value) => set((state) => {
       const recipe = productRecipesByName.get(value)
       if (!recipe) {
-        throw new Error(`Recipe with name ${value} not found.`);
+        throw new Error(`Recipe with name ${value} not found.`)
       } else if (!recipe.primaryProduct) {
-        throw new Error(`Recipe ${value} does not have primary product.`);
+        throw new Error(`Recipe ${value} does not have primary product.`)
       }
 
       const recipesForProduct = productRecipesByPrimaryProduct.get(recipe.primaryProduct)
       if (!recipesForProduct) {
-        throw new Error(`Recipe for product ${recipe.primaryProduct} not found.`);
+        throw new Error(`Recipe for product ${recipe.primaryProduct} not found.`)
       }
       const recipeNamesForProduct = recipesForProduct.map((recipe) => recipe.name)
 
       const others = state.recipesInUse.filter((recipeName) => !recipeNamesForProduct.includes(recipeName))
       state.recipesInUse = [...others, value]
-      updateAnswer(state, get)
+      updateAnswer(state)
     }),
-    refreshAnswer: () => set((state) => updateAnswer(state, get)),
+    updateAnswer: () => set((state) => updateAnswer(state)),
     onSolverFinished: (result) => set((state) => {
       state.isSolverRunning = false
       state.feasible = result.feasible
@@ -133,16 +137,17 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
       )
     },
     merge: (persistedState, currentState) => {
-      return { ...currentState, ...persistedState as Partial<ProblemState & ProblemAction> }
+      return produce(currentState, (state) => Object.assign(state, persistedState))
     },
     version: 1
   })
 )
 
-function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>, get: () => ProblemState & ProblemAction) {
+function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>) {
   state.isSolverRunning = true
   solve(
     state.population, state.consumptionChange + state.globalAdjustment,
     state.foodsInUse, state.medicalSuppliesInUse, state.farmVariant, state.fertilityTarget, state.recipesInUse
-  ).then((result) => get().onSolverFinished(result))
+  ).then((result) => useProblemStore.getState().onSolverFinished(result))
 }
+const updateAnswerDebounced = debounce(() => useProblemStore.setState((state) => updateAnswer(state)), UPDATE_ANSWER_DELAY)
