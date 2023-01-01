@@ -11,6 +11,14 @@ export interface Food extends Item {
   feeds: number
 }
 
+export const MEDICAL_SUPPLIES = {
+  None: "None",
+  MedicalSupplies: "Medical Supplies",
+  MedicalSupplies2: "Medical Supplies II",
+  MedicalSupplies3: "Medical Supplies III"
+}
+export type MedicalSupplies = typeof MEDICAL_SUPPLIES[keyof typeof MEDICAL_SUPPLIES]
+
 export const VIRTUAL_ITEM = {
   Demand: "Demand"
 } as const
@@ -42,6 +50,15 @@ const productData: Item[] = [
   { name: "Canola", image: "", isFood: false, isCrop: true },
   { name: "Sugar", image: "", isFood: false, isCrop: false },
   { name: "Sugar Cane", image: "", isFood: false, isCrop: true },
+  { name: "Medical Supplies", image: "", isFood: false, isCrop: false },
+  { name: "Disinfectant", image: "", isFood: false, isCrop: false },
+  { name: "Ethanol", image: "", isFood: false, isCrop: false },
+  { name: "Corn Mash", image: "", isFood: false, isCrop: false },
+  { name: "Medical Supplies II", image: "", isFood: false, isCrop: false },
+  { name: "Antibiotics", image: "", isFood: false, isCrop: false },
+  { name: "Medical Supplies III", image: "", isFood: false, isCrop: false },
+  { name: "Morphine", image: "", isFood: false, isCrop: false },
+  { name: "Poppy", image: "", isFood: false, isCrop: true },
 ]
 
 export const allFoods = function () {

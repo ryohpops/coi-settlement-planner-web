@@ -1,4 +1,5 @@
 import { Layout } from 'antd'
+import Typography from 'antd/es/typography/Typography'
 import Head from 'next/head'
 import PlanDisplay from '../components/planDisplay'
 import PlanInput from '../components/planInput'
@@ -23,7 +24,7 @@ export default function Home() {
             <PlanDisplay />
           </Layout.Content>
           <Layout.Footer>
-
+            <Typography style={{ textAlign: "center" }}>Created by ryohpops</Typography>
           </Layout.Footer>
         </Layout>
       </Layout>

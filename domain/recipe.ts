@@ -99,6 +99,66 @@ const productRecipeData: Recipe[] = [
     products: new Map([["Sugar", 8]]),
     ingredients: new Map([["Sugar Cane", 10]])
   },
+  {
+    name: "Produce Medical Supplies", production_time: 20, primaryProduct: "Medical Supplies",
+    products: new Map([["Medical Supplies", 8]]),
+    ingredients: new Map([["Disinfectant", 4]])
+  },
+  {
+    name: "Produce Disinfectant with Chemical Plant", production_time: 40, primaryProduct: "Disinfectant",
+    products: new Map([["Disinfectant", 8]]),
+    ingredients: new Map([["Ethanol", 3]])
+  },
+  {
+    name: "Produce Disinfectant with Chemical Plant II", production_time: 20, primaryProduct: "Disinfectant",
+    products: new Map([["Disinfectant", 8]]),
+    ingredients: new Map([["Ethanol", 3]])
+  },
+  {
+    name: "Produce Ethanol from Corn Mash", production_time: 40, primaryProduct: "Ethanol",
+    products: new Map([["Ethanol", 3]]),
+    ingredients: new Map([["Corn Mash", 6]])
+  },
+  {
+    name: "Produce Ethanol from Sugar", production_time: 40, primaryProduct: "Ethanol",
+    products: new Map([["Ethanol", 4]]),
+    ingredients: new Map([["Sugar", 8]])
+  },
+  {
+    name: "Produce Corn Mash", production_time: 40, primaryProduct: "Corn Mash",
+    products: new Map([["Corn Mash", 6]]),
+    ingredients: new Map([["Corn", 8]])
+  },
+  {
+    name: "Produce Medical Supplies II with Assembly (Electric) II", production_time: 20, primaryProduct: "Medical Supplies II",
+    products: new Map([["Medical Supplies II", 8]]),
+    ingredients: new Map([["Medical Supplies", 8], ["Antibiotics", 4]])
+  },
+  {
+    name: "Produce Medical Supplies II with Assembly (Robotic)", production_time: 10, primaryProduct: "Medical Supplies II",
+    products: new Map([["Medical Supplies II", 8]]),
+    ingredients: new Map([["Medical Supplies", 8], ["Antibiotics", 4]])
+  },
+  {
+    name: "Produce Antibiotics", production_time: 80, primaryProduct: "Antibiotics",
+    products: new Map([["Antibiotics", 8]]),
+    ingredients: new Map([["Sugar", 4]])
+  },
+  {
+    name: "Produce Medical Supplies III with Assembly (Electric) II", production_time: 20, primaryProduct: "Medical Supplies III",
+    products: new Map([["Medical Supplies III", 8]]),
+    ingredients: new Map([["Medical Supplies II", 8], ["Morphine", 4]])
+  },
+  {
+    name: "Produce Medical Supplies III with Assembly (Robotic)", production_time: 10, primaryProduct: "Medical Supplies III",
+    products: new Map([["Medical Supplies III", 8]]),
+    ingredients: new Map([["Medical Supplies II", 8], ["Morphine", 4]])
+  },
+  {
+    name: "Produce Morphine", production_time: 20, primaryProduct: "Morphine",
+    products: new Map([["Morphine", 8]]),
+    ingredients: new Map([["Poppy", 4]])
+  },
 ]
 const farmRecipeData: Recipe[] = [
   {
@@ -137,6 +197,11 @@ const ghRecipeData: Recipe[] = [
     name: "Produce Canola", production_time: 180, primaryProduct: "Canola",
     products: new Map([["Canola", 33]]),
     ingredients: new Map([["Fertility", 0.30]])
+  },
+  {
+    name: "Produce Poppy", production_time: 240, primaryProduct: "Poppy",
+    products: new Map([["Poppy", 25]]),
+    ingredients: new Map([["Fertility", 0.40]])
   },
   {
     name: "Produce Potato", production_time: 180, primaryProduct: "Potato",
@@ -179,6 +244,11 @@ const gh2RecipeData: Recipe[] = [
     name: "Produce Canola", production_time: 180, primaryProduct: "Canola",
     products: new Map([["Canola", 39]]),
     ingredients: new Map([["Fertility", 0.34]])
+  },
+  {
+    name: "Produce Poppy", production_time: 240, primaryProduct: "Poppy",
+    products: new Map([["Poppy", 30]]),
+    ingredients: new Map([["Fertility", 0.45]])
   },
   {
     name: "Produce Potato", production_time: 180, primaryProduct: "Potato",

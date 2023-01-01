@@ -2,7 +2,7 @@ import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space, Tree } from
 import { SliderMarks } from "antd/es/slider"
 import type { DataNode } from "antd/es/tree"
 import { useEffect } from "react"
-import { allFoods, categories } from "../domain/item"
+import { allFoods, categories, MEDICAL_SUPPLIES } from "../domain/item"
 import { useProblemStore } from "../domain/problemStore"
 import { FARM_VARIANT } from "../domain/recipe"
 
@@ -44,13 +44,6 @@ export default function PlanInput() {
           onChange={(value) => problemStore.setPopulation(value)}
         />
       </Form.Item>
-      <Form.Item label="Total food consumption change by edicts">
-        <InputNumber
-          addonAfter="%"
-          value={problemStore.consumptionChange}
-          onChange={(value) => problemStore.setConsumptionChange(value)}
-        />
-      </Form.Item>
       <Form.Item
         label="Global adjustment"
         tooltip="Produce every food x% more than required amount as buffers"
@@ -70,6 +63,28 @@ export default function PlanInput() {
           defaultCheckedKeys={problemStore.foodsInUse}
           onCheck={(keys) => problemStore.setFoodsInUse(keys as string[])}
         />
+      </Form.Item>
+      <Form.Item label="Total food consumption change by edicts">
+        <InputNumber
+          addonAfter="%"
+          value={problemStore.consumptionChange}
+          onChange={(value) => problemStore.setConsumptionChange(value)}
+        />
+      </Form.Item>
+
+      <Divider orientation="left">Medical supply in use</Divider>
+      <Form.Item>
+        <Radio.Group
+          value={problemStore.medicalSuppliesInUse}
+          onChange={(e) => problemStore.setMedicalSuppliesInUse(e.target.value)}
+        >
+          <Space direction="vertical">
+            <Radio value={MEDICAL_SUPPLIES.None}>None</Radio>
+            <Radio value={MEDICAL_SUPPLIES.MedicalSupplies}>Medical Supplies</Radio>
+            <Radio value={MEDICAL_SUPPLIES.MedicalSupplies2}>Medical Supplies II</Radio>
+            <Radio value={MEDICAL_SUPPLIES.MedicalSupplies3}>Medical Supplies III</Radio>
+          </Space>
+        </Radio.Group>
       </Form.Item>
 
       <Divider orientation="left">Farm</Divider>

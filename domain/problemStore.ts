@@ -1,7 +1,7 @@
 import { WritableDraft } from "immer/dist/internal"
 import create from "zustand"
 import { immer } from "zustand/middleware/immer"
-import { allFoods } from "./item"
+import { allFoods, MedicalSupplies, MEDICAL_SUPPLIES } from "./item"
 import { FarmVariant, FARM_VARIANT, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
 import { Result, solve } from "./solver"
 
@@ -10,6 +10,7 @@ interface ProblemState {
   consumptionChange: number
   globalAdjustment: number
   foodsInUse: string[]
+  medicalSuppliesInUse: MedicalSupplies
   farmVariant: FarmVariant
   fertilityTarget: number
   recipesInUse: string[]
@@ -24,6 +25,7 @@ interface ProblemAction {
   setConsumptionChange: (value: number | null) => void
   setGlobalAdjustment: (value: number | null) => void
   setFoodsInUse: (values: string[]) => void
+  setMedicalSuppliesInUse: (value: MedicalSupplies) => void
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
   setRecipesInUse: (value: string) => void
@@ -42,9 +44,17 @@ const initialState: ProblemState = {
   consumptionChange: 0,
   globalAdjustment: 0,
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
+  medicalSuppliesInUse: MEDICAL_SUPPLIES.MedicalSupplies,
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
-  recipesInUse: ["Produce Animal Feed from Soybean", "Produce Snack from Corn"],
+  recipesInUse: [
+    "Produce Animal Feed from Soybean",
+    "Produce Snack from Corn",
+    "Produce Disinfectant with Chemical Plant",
+    "Produce Ethanol from Corn Mash",
+    "Produce Medical Supplies II with Assembly (Electric) II",
+    "Produce Medical Supplies III with Assembly (Electric) II"
+  ],
 
   isSolverRunning: false,
   feasible: emptyResult.feasible,
@@ -68,6 +78,10 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
     }),
     setFoodsInUse: (values) => set((state) => {
       state.foodsInUse = values.filter((key) => allFoods.has(key))
+      updateAnswer(state, get)
+    }),
+    setMedicalSuppliesInUse: (value) => set((state) => {
+      state.medicalSuppliesInUse = value
       updateAnswer(state, get)
     }),
     setFarmVariant: (value) => set((state) => {
@@ -111,6 +125,6 @@ function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>, get: (
   state.isSolverRunning = true
   solve(
     state.population, state.consumptionChange + state.globalAdjustment,
-    state.foodsInUse, state.farmVariant, state.fertilityTarget, state.recipesInUse
+    state.foodsInUse, state.medicalSuppliesInUse, state.farmVariant, state.fertilityTarget, state.recipesInUse
   ).then((result) => get().onSolverFinished(result))
 }
