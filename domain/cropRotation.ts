@@ -32,7 +32,7 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
   cropRecipes.forEach((recipe) => recipe.products.forEach((value, key) => products.set(key, value * equilibrium)))
 
   return {
-    name: cropRecipes.map((recipe) => recipe.name).join("/"),
+    name: "Produce " + cropRecipes.map((recipe) => recipe.primaryProduct).join("/"),
     production_time: rotationTime,
     products: products,
     ingredients: new Map(),
