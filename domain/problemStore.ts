@@ -119,7 +119,7 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
 
       const others = state.recipesInUse.filter((recipeName) => !recipeNamesForProduct.includes(recipeName))
       state.recipesInUse = [...others, value]
-      updateAnswer(state)
+      updateAnswerDebounced()
     }),
     updateAnswer: () => set((state) => updateAnswer(state)),
     onSolverFinished: (result) => set((state) => {
