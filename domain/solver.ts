@@ -22,8 +22,9 @@ export interface Result {
 }
 
 export async function solve(
-  population: number, demandAdjustment: number,
-  foodsInUse: string[], medicalSuppliesInUse: string, farmVariant: FarmVariant, fertilityTarget: number, recipesInUse: string[]
+  populationForFood: number, foodsInUse: string[],
+  populationForMedicalSupplies: number, medicalSuppliesInUse: string,
+  farmVariant: FarmVariant, fertilityTarget: number, recipesInUse: string[]
 ): Promise<Result> {
   const itemResults = new Map<string, ItemResult>()
   allItems.forEach((item, itemName) =>
@@ -32,7 +33,8 @@ export async function solve(
   const recipeResults = new Map<string, RecipeResult>()
 
   const isProductSolved = await solveProduct(
-    itemResults, recipeResults, population, demandAdjustment, foodsInUse, medicalSuppliesInUse, recipesInUse
+    itemResults, recipeResults, populationForFood, foodsInUse,
+    populationForMedicalSupplies, medicalSuppliesInUse, recipesInUse
   )
   if (!isProductSolved) {
     return {
@@ -56,15 +58,16 @@ export async function solve(
 
 async function solveProduct(
   itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>,
-  population: number, demandAdjustment: number, foodsInUse: string[], medicalSuppliesInUse: string, recipesInUse: string[]
+  populationForFood: number, foodsInUse: string[], populationForMedicalSupplies: number, medicalSuppliesInUse: string,
+  recipesInUse: string[]
 ): Promise<boolean> {
-  const foodDemands = calculateFoodDemands(population, demandAdjustment, foodsInUse)
+  const foodDemands = calculateFoodDemands(populationForFood, foodsInUse)
   foodDemands.forEach((demand, foodName) => {
     const food = getMapItem(itemResults, foodName)
     food.transientDemand = demand
     food.outs.set(VIRTUAL_ITEM.Demand, demand)
   })
-  const medicalSuppliesDemand = calculateMedicalSuppliesDemand(population, demandAdjustment, medicalSuppliesInUse)
+  const medicalSuppliesDemand = calculateMedicalSuppliesDemand(populationForMedicalSupplies, medicalSuppliesInUse)
   medicalSuppliesDemand.forEach((demand, medicalSuppliesName) => {
     const medicalSupplies = getMapItem(itemResults, medicalSuppliesName)
     medicalSupplies.transientDemand = demand
@@ -123,7 +126,7 @@ async function solveProduct(
   return true
 }
 
-function calculateFoodDemands(population: number, adjustment: number, foodsInUse: string[]): Map<string, number> {
+function calculateFoodDemands(population: number, foodsInUse: string[]): Map<string, number> {
   const demands = new Map<string, number>()
   const foods = foodsInUse.map((foodName) => getMapItem(allFoods, foodName))
 
@@ -132,7 +135,6 @@ function calculateFoodDemands(population: number, adjustment: number, foodsInUse
     food.name,
     population
     / food.feeds
-    * (100 + adjustment) / 100
     / categoriesInUse.size
     / foods.filter((food2) => food2.category === food.category).length
   ))
@@ -140,13 +142,12 @@ function calculateFoodDemands(population: number, adjustment: number, foodsInUse
   return demands
 }
 
-function calculateMedicalSuppliesDemand(population: number, adjustment: number, medicalSuppliesInUse: string): Map<string, number> {
+function calculateMedicalSuppliesDemand(population: number, medicalSuppliesInUse: string): Map<string, number> {
   const demands = new Map<string, number>()
   if (medicalSuppliesInUse !== MEDICAL_SUPPLIES.None) {
     demands.set(
       medicalSuppliesInUse,
       population / 1000 * 5.4
-      * 1.5 * (100 + adjustment) / 100
     )
   }
   return demands

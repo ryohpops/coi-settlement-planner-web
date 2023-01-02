@@ -14,8 +14,9 @@ interface ProblemState {
   population: number
   globalAdjustment: number
   foodsInUse: string[]
-  consumptionChange: number
+  foodConsumptionChange: number
   medicalSuppliesInUse: MedicalSupplies
+  medicalSuppliesConsumptionChange: number
   farmVariant: FarmVariant
   fertilityTarget: number
   recipesInUse: string[]
@@ -25,16 +26,18 @@ interface ProblemState {
   answer: Result
 }
 const ProblemStatePersistentItems = [
-  "population", "globalAdjustment", "foodsInUse", "consumptionChange",
-  "medicalSuppliesInUse", "farmVariant", "fertilityTarget", "recipesInUse"
+  "population", "globalAdjustment", "foodsInUse", "foodConsumptionChange",
+  "medicalSuppliesInUse", "medicalSuppliesConsumptionChange",
+  "farmVariant", "fertilityTarget", "recipesInUse"
 ]
 
 interface ProblemAction {
   setPopulation: (value: number | null) => void
   setGlobalAdjustment: (value: number | null) => void
   setFoodsInUse: (values: string[]) => void
-  setConsumptionChange: (value: number | null) => void
+  setFoodConsumptionChange: (value: number | null) => void
   setMedicalSuppliesInUse: (value: MedicalSupplies) => void
+  setMedicalSuppliesConsumptionChange: (value: number | null) => void
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
   setRecipesInUse: (value: string) => void
@@ -54,8 +57,9 @@ const initialState: ProblemState = {
   population: 1000,
   globalAdjustment: 5,
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
-  consumptionChange: 0,
+  foodConsumptionChange: 0,
   medicalSuppliesInUse: MEDICAL_SUPPLIES.MedicalSupplies,
+  medicalSuppliesConsumptionChange: 50,
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
   recipesInUse: [
@@ -87,12 +91,16 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
       state.foodsInUse = values.filter((key) => allFoods.has(key))
       updateAnswerDebounced()
     }),
-    setConsumptionChange: (value) => set((state) => {
-      state.consumptionChange = value ?? 0
+    setFoodConsumptionChange: (value) => set((state) => {
+      state.foodConsumptionChange = value ?? 0
       updateAnswerDebounced()
     }),
     setMedicalSuppliesInUse: (value) => set((state) => {
       state.medicalSuppliesInUse = value
+      updateAnswerDebounced()
+    }),
+    setMedicalSuppliesConsumptionChange: (value) => set((state) => {
+      state.medicalSuppliesConsumptionChange = value ?? 0
       updateAnswerDebounced()
     }),
     setFarmVariant: (value) => set((state) => {
@@ -139,15 +147,25 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
     merge: (persistedState, currentState) => {
       return produce(currentState, (state) => Object.assign(state, persistedState))
     },
-    version: 1
+    version: 2,
+    migrate: (persistedState: any, version) => {
+      if (version < 2) {
+        persistedState.foodConsumptionChange = persistedState.consumptionChange
+        delete persistedState.consumptionChange
+      }
+      return persistedState
+    }
   })
 )
 
 function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>) {
   state.isSolverRunning = true
   solve(
-    state.population, state.consumptionChange + state.globalAdjustment,
-    state.foodsInUse, state.medicalSuppliesInUse, state.farmVariant, state.fertilityTarget, state.recipesInUse
+    state.population * (100 + state.foodConsumptionChange + state.globalAdjustment) / 100,
+    state.foodsInUse,
+    state.population * (100 + state.medicalSuppliesConsumptionChange + state.globalAdjustment) / 100,
+    state.medicalSuppliesInUse,
+    state.farmVariant, state.fertilityTarget, state.recipesInUse
   ).then((result) => useProblemStore.getState().onSolverFinished(result))
 }
 const updateAnswerDebounced = debounce(() => useProblemStore.setState((state) => updateAnswer(state)), UPDATE_ANSWER_DELAY)

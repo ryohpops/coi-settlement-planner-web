@@ -20,10 +20,12 @@ function PlanInput() {
     setPopulation: state.setPopulation,
     globalAdjustment: state.globalAdjustment,
     setGlobalAdjustment: state.setGlobalAdjustment,
-    consumptionChange: state.consumptionChange,
-    setConsumptionChange: state.setConsumptionChange,
+    foodConsumptionChange: state.foodConsumptionChange,
+    setFoodConsumptionChange: state.setFoodConsumptionChange,
     medicalSuppliesInUse: state.medicalSuppliesInUse,
     setMedicalSuppliesInUse: state.setMedicalSuppliesInUse,
+    medicalSuppliesConsumptionChange: state.medicalSuppliesConsumptionChange,
+    setMedicalSuppliesConsumptionChange: state.setMedicalSuppliesConsumptionChange,
     farmVariant: state.farmVariant,
     setFarmVariant: state.setFarmVariant,
     fertilityTarget: state.fertilityTarget,
@@ -61,8 +63,8 @@ function PlanInput() {
       <Form.Item label="Total food consumption change by edicts">
         <InputNumber
           addonAfter="%"
-          value={problemStore.consumptionChange}
-          onChange={(value) => problemStore.setConsumptionChange(value)}
+          value={problemStore.foodConsumptionChange}
+          onChange={(value) => problemStore.setFoodConsumptionChange(value)}
         />
       </Form.Item>
 
@@ -79,6 +81,16 @@ function PlanInput() {
             <Radio value={MEDICAL_SUPPLIES.MedicalSupplies3}>Medical Supplies III</Radio>
           </Space>
         </Radio.Group>
+      </Form.Item>
+      <Form.Item
+        label="Average consumption change of Medical Supplies"
+        tooltip="Clinics consume 50% more Medical Supplies while there is a disease."
+      >
+        <InputNumber
+          addonAfter="%"
+          value={problemStore.medicalSuppliesConsumptionChange}
+          onChange={(value) => problemStore.setMedicalSuppliesConsumptionChange(value)}
+        />
       </Form.Item>
 
       <Divider orientation="left">Farm</Divider>
