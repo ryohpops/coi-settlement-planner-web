@@ -20,7 +20,8 @@ export const MEDICAL_SUPPLIES = {
 export type MedicalSupplies = typeof MEDICAL_SUPPLIES[keyof typeof MEDICAL_SUPPLIES]
 
 export const VIRTUAL_ITEM = {
-  Demand: "Demand"
+  Demand: "Demand",
+  Fertility: "Fertility"
 } as const
 export type VirtualItem = typeof VIRTUAL_ITEM[keyof typeof VIRTUAL_ITEM]
 
