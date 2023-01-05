@@ -30,7 +30,6 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
   } else {
     throw new Error(`Invalid recipes were given for createCropRotation.`)
   }
-  averageEquilibrium = Math.max(averageEquilibrium, fertilityTarget / 100)
 
   const products = new Map<string, number>()
   cropRecipes.forEach((recipe) => {
@@ -43,7 +42,7 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
         - fertilityUsage / recipe.production_time * DAY_LENGTH
         + (1 - equilibrium) * 0.01
     }
-    products.set(cropName, cropAmount * equilibrium)
+    products.set(cropName, cropAmount * Math.max(equilibrium, fertilityTarget / 100))
   })
 
   return {
