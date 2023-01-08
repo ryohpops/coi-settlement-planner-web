@@ -5,6 +5,7 @@ import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, us
 import "reactflow/dist/style.css"
 import { useProblemStore } from "../domain/problemStore"
 import { ItemResult, RecipeResult } from "../domain/solver"
+import BuildingList from "./buildingList"
 import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
 import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
 
@@ -31,21 +32,23 @@ function PlanDisplayInternal() {
   graph.setGraph({ rankdir: "LR" })
   graph.setDefaultEdgeLabel(() => ({}))
 
-  const nodes: Node[] = []
-  const edges: Edge[] = []
+  const itemNodes: Node[] = []
   answer?.itemResults.forEach((itemResult, itemName) => {
     graph.setNode(
       itemName,
       { width: ItemResultNodeWidth, height: ItemResultNodeHeight }
     )
-    nodes.push(createItemNode(itemResult))
+    itemNodes.push(createItemNode(itemResult))
   })
+
+  const recipeNodes: Node[] = []
+  const edges: Edge[] = []
   answer?.recipeResults.forEach((recipeResult, recipeName) => {
     graph.setNode(
       recipeName,
       { width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }
     )
-    nodes.push(createRecipeNode(recipeResult))
+    recipeNodes.push(createRecipeNode(recipeResult))
     recipeResult.recipe.products.forEach((amount, name) => {
       graph.setEdge(recipeName, name)
       edges.push({
@@ -64,6 +67,7 @@ function PlanDisplayInternal() {
 
   dagre.layout(graph)
 
+  const nodes = [...itemNodes, ...recipeNodes]
   nodes.forEach((node) => {
     const graphNode = graph.node(node.id)
     node.position.x = graphNode.x - graphNode.width / 2
@@ -85,6 +89,9 @@ function PlanDisplayInternal() {
   return (
     <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
       <MiniMap pannable zoomable position="top-right" />
+      <Panel position="bottom-left">
+        <BuildingList nodes={recipeNodes} />
+      </Panel>
       <Panel position="bottom-right">
         {status}
       </Panel>

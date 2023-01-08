@@ -57,11 +57,11 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
 function getCropNameAndAmount(recipe: Recipe): [string, number] {
   const cropName = recipe.primaryProduct
   if (!cropName) {
-    throw new Error(`Crop recipe ${recipe.name} does not have primary product.`);
+    throw new Error(`Crop recipe ${recipe.name} does not have primary product.`)
   }
   const cropAmount = recipe.products.get(cropName)
   if (!cropAmount) {
-    throw new Error(`Cannot get crop production from recipe ${recipe.name}.`);
+    throw new Error(`Cannot get crop production from recipe ${recipe.name}.`)
   }
 
   return [cropName, cropAmount]
