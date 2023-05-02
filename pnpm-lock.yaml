@@ -4,9 +4,6 @@ dependencies:
   '@ant-design/icons':
     specifier: ^4.8.0
     version: 4.8.0(react-dom@18.2.0)(react@18.2.0)
-  '@next/font':
-    specifier: 13.0.7
-    version: 13.0.7
   '@types/dagre':
     specifier: ^0.7.48
     version: 0.7.48
@@ -191,10 +188,6 @@ packages:
     resolution: {integrity: sha512-mvS+HafOPy31oJbAi920WJXMdjbyb4v5FAMr9PeGZfRIdEcsLkA3mU/ZvmwzovJgP3nAWw2e2yM8iIFW8VpvIA==}
     dependencies:
       glob: 7.1.7
-    dev: false
-
-  /@next/font@13.0.7:
-    resolution: {integrity: sha512-39SzuoMI6jbrIzPs3KtXdKX03OrVp6Y7kRHcoVmOg69spiBzruPJ5x5DQSfN+OXqznbvVBNZBXnmdnSqs3qXiA==}
     dev: false
 
   /@next/swc-darwin-arm64@13.3.4:
