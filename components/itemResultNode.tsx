@@ -2,7 +2,7 @@ import { Card } from "antd"
 import { Chart } from "react-google-charts"
 import { Handle, NodeProps, Position } from "reactflow"
 import { VIRTUAL_ITEM } from "../domain/item"
-import { ItemResult } from "../domain/solver"
+import { ItemStatus } from "../domain/solver"
 
 export const ItemResultNodeWidth = 300
 export const ItemResultNodeHeight = 200
@@ -16,7 +16,7 @@ const options = {
   legend: { position: "none" }
 }
 
-export default function ItemResultNode({ data }: NodeProps<ItemResult>) {
+export default function ItemResultNode({ data }: NodeProps<ItemStatus>) {
   const items: string[] = ["Item"]
   const ins: (string | number)[] = ["In"]
   const outs: (string | number)[] = ["Out"]

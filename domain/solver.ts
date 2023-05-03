@@ -5,62 +5,62 @@ import { FarmVariant, Recipe, farmingRecipes, productRecipesByName, productRecip
 
 const TIME_SCALE = 60
 
-export interface ItemResult {
+export interface ItemStatus {
   item: Item
   ins: Map<string, number>
   outs: Map<string, number>
 }
-export interface RecipeResult {
+export interface RecipeStatus {
   recipe: Recipe
   times: number
 }
-export interface Result {
+export interface FarmingConfigSolution {
   feasible: boolean
-  itemResults: Map<string, ItemResult>
-  recipeResults: Map<string, RecipeResult>
+  itemStatus: Map<string, ItemStatus>
+  recipeStatus: Map<string, RecipeStatus>
 }
 
-export async function solveFarmingConfiguration(
+export async function solveFarmingConfig(
   populationForFood: number, foodsInUse: string[],
   populationForMedicalSupplies: number, medicalSuppliesInUse: string,
   farmVariant: FarmVariant, fertilityTarget: number, recipesInUse: string[]
-): Promise<Result> {
+): Promise<FarmingConfigSolution> {
   const highs = await highsLoader({
     locateFile: (file) => "https://lovasoa.github.io/highs-js/" + file
   })
 
-  const itemResults = new Map<string, ItemResult>()
+  const itemStatus = new Map<string, ItemStatus>()
   allItems.forEach((item, itemName) =>
-    itemResults.set(itemName, { item: item, ins: new Map(), outs: new Map() })
+    itemStatus.set(itemName, { item: item, ins: new Map(), outs: new Map() })
   )
-  const recipeResults = new Map<string, RecipeResult>()
+  const recipeStatus = new Map<string, RecipeStatus>()
 
   const isProductSolved = await solveProduct(
-    itemResults, recipeResults, populationForFood, foodsInUse,
+    itemStatus, recipeStatus, populationForFood, foodsInUse,
     populationForMedicalSupplies, medicalSuppliesInUse, recipesInUse, highs
   )
   if (!isProductSolved) {
     return {
-      feasible: false, itemResults: new Map(), recipeResults: new Map()
+      feasible: false, itemStatus: new Map(), recipeStatus: new Map()
     }
   }
 
-  const isFarmSolved = await solveFarm(itemResults, recipeResults, farmVariant, fertilityTarget, highs)
+  const isFarmSolved = await solveFarm(itemStatus, recipeStatus, farmVariant, fertilityTarget, highs)
   if (!isFarmSolved) {
     return {
-      feasible: false, itemResults: new Map(), recipeResults: new Map()
+      feasible: false, itemStatus: new Map(), recipeStatus: new Map()
     }
   }
 
   return {
     feasible: true,
-    itemResults: new Map(Array.from(itemResults).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)),
-    recipeResults: new Map(Array.from(recipeResults).filter(([recipeName, recipe]) => recipe.times > 0))
+    itemStatus: new Map(Array.from(itemStatus).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)),
+    recipeStatus: new Map(Array.from(recipeStatus).filter(([recipeName, recipe]) => recipe.times > 0))
   }
 }
 
 async function solveProduct(
-  itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>,
+  itemResults: Map<string, ItemStatus>, recipeResults: Map<string, RecipeStatus>,
   populationForFood: number, foodsInUse: string[], populationForMedicalSupplies: number, medicalSuppliesInUse: string,
   recipesInUse: string[], highs: Highs
 ): Promise<boolean> {
@@ -173,7 +173,7 @@ function calculateMedicalSuppliesDemand(population: number, medicalSuppliesInUse
 }
 
 async function solveFarm(
-  itemResults: Map<string, ItemResult>, recipeResults: Map<string, RecipeResult>,
+  itemResults: Map<string, ItemStatus>, recipeResults: Map<string, RecipeStatus>,
   farmVariant: FarmVariant, fertilityTarget: number, highs: Highs
 ): Promise<boolean> {
   const cropWithDemands = Array.from(itemResults.values())

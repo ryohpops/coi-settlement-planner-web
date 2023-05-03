@@ -3,8 +3,8 @@ import { Spin } from "antd"
 import dagre from "dagre"
 import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
 import "reactflow/dist/style.css"
-import { useProblemStore } from "../domain/problemStore"
-import { ItemResult, RecipeResult } from "../domain/solver"
+import { useFarmConfigStore } from "../domain/farmConfigStore"
+import { ItemStatus, RecipeStatus } from "../domain/solver"
 import BuildingList from "./buildingList"
 import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
 import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
@@ -23,9 +23,9 @@ export default function PlanDisplay() {
 }
 
 function PlanDisplayInternal() {
-  const answer = useProblemStore((state) => state.answer)
-  const isSolverRunning = useProblemStore((state) => state.isSolverRunning)
-  const feasible = useProblemStore((state) => state.feasible)
+  const answer = useFarmConfigStore((state) => state.solution)
+  const isSolverRunning = useFarmConfigStore((state) => state.isSolverRunning)
+  const feasible = useFarmConfigStore((state) => state.feasible)
   const updateNode = useUpdateNodeInternals()
 
   const graph = new dagre.graphlib.Graph()
@@ -33,7 +33,7 @@ function PlanDisplayInternal() {
   graph.setDefaultEdgeLabel(() => ({}))
 
   const itemNodes: Node[] = []
-  answer?.itemResults.forEach((itemResult, itemName) => {
+  answer?.itemStatus.forEach((itemResult, itemName) => {
     graph.setNode(
       itemName,
       { width: ItemResultNodeWidth, height: ItemResultNodeHeight }
@@ -43,7 +43,7 @@ function PlanDisplayInternal() {
 
   const recipeNodes: Node[] = []
   const edges: Edge[] = []
-  answer?.recipeResults.forEach((recipeResult, recipeName) => {
+  answer?.recipeStatus.forEach((recipeResult, recipeName) => {
     graph.setNode(
       recipeName,
       { width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }
@@ -99,14 +99,14 @@ function PlanDisplayInternal() {
   )
 }
 
-function createItemNode(itemResult: ItemResult): Node<ItemResult> {
+function createItemNode(itemResult: ItemStatus): Node<ItemStatus> {
   return {
     id: itemResult.item.name, type: "itemResult",
     position: { x: 0, y: 0 }, data: itemResult
   }
 }
 
-function createRecipeNode(recipeResult: RecipeResult): Node<RecipeResult> {
+function createRecipeNode(recipeResult: RecipeStatus): Node<RecipeStatus> {
   return {
     id: recipeResult.recipe.name, type: "recipeResult",
     position: { x: 0, y: 0 }, data: recipeResult

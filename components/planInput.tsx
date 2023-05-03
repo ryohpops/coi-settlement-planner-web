@@ -4,7 +4,7 @@ import dynamic from "next/dynamic"
 import { useEffect } from "react"
 import shallow from "zustand/shallow"
 import { MEDICAL_SUPPLIES } from "../domain/item"
-import { useProblemStore } from "../domain/problemStore"
+import { useFarmConfigStore } from "../domain/farmConfigStore"
 import { FARM_VARIANT } from "../domain/recipe"
 import FoodsInUseSelector from "./foodsInUseSelector"
 
@@ -15,7 +15,7 @@ const fertilityTargetMarks: SliderMarks = {
 }
 
 function PlanInput() {
-  const problemStore = useProblemStore((state) => ({
+  const problemStore = useFarmConfigStore((state) => ({
     population: state.population,
     setPopulation: state.setPopulation,
     globalAdjustment: state.globalAdjustment,
@@ -30,7 +30,7 @@ function PlanInput() {
     setFarmVariant: state.setFarmVariant,
     fertilityTarget: state.fertilityTarget,
     setFertilityTarget: state.setFertilityTarget,
-    updateAnswer: state.updateAnswer
+    updateAnswer: state.updateSolution
   }), shallow)
 
   useEffect(() => problemStore.updateAnswer(), [])
