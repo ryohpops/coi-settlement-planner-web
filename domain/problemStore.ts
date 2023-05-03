@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware"
 import { immer } from "zustand/middleware/immer"
 import { allFoods, MedicalSupplies, MEDICAL_SUPPLIES } from "./item"
 import { FarmVariant, FARM_VARIANT, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
-import { Result, solve } from "./solver"
+import { Result, solveFarmingConfiguration } from "./solver"
 
 const UPDATE_ANSWER_DELAY = 400
 
@@ -77,7 +77,7 @@ const initialState: ProblemState = {
 }
 
 export const useProblemStore = create<ProblemState & ProblemAction>()(
-  persist(immer((set) => ({
+  persist(immer((set, get) => ({
     ...initialState,
     setPopulation: (value) => set((state) => {
       state.population = value ?? 0
@@ -129,7 +129,7 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
       state.recipesInUse = [...others, value]
       updateAnswerDebounced()
     }),
-    updateAnswer: () => set((state) => updateAnswer(state)),
+    updateAnswer: () => set((state) => updateAnswer(state, get())),
     onSolverFinished: (result) => set((state) => {
       state.isSolverRunning = false
       state.feasible = result.feasible
@@ -158,9 +158,9 @@ export const useProblemStore = create<ProblemState & ProblemAction>()(
   })
 )
 
-function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>) {
-  state.isSolverRunning = true
-  solve(
+function updateAnswer(draft: WritableDraft<ProblemState & ProblemAction>, state: ProblemState & ProblemAction) {
+  draft.isSolverRunning = true
+  solveFarmingConfiguration(
     state.population * (100 + state.foodConsumptionChange + state.globalAdjustment) / 100,
     state.foodsInUse,
     state.population * (100 + state.medicalSuppliesConsumptionChange + state.globalAdjustment) / 100,
@@ -168,4 +168,7 @@ function updateAnswer(state: WritableDraft<ProblemState & ProblemAction>) {
     state.farmVariant, state.fertilityTarget, state.recipesInUse
   ).then((result) => useProblemStore.getState().onSolverFinished(result))
 }
-const updateAnswerDebounced = debounce(() => useProblemStore.setState((state) => updateAnswer(state)), UPDATE_ANSWER_DELAY)
+const updateAnswerDebounced = debounce(
+  () => useProblemStore.setState((state) => updateAnswer(state, useProblemStore.getState())),
+  UPDATE_ANSWER_DELAY
+)
