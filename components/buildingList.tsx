@@ -2,7 +2,7 @@ import { Button, Modal, Table } from "antd"
 import { ColumnsType } from "antd/es/table"
 import { useState } from "react"
 import { Node } from "reactflow"
-import { RecipeStatus } from "../domain/solver"
+import { RecipeStatus } from "../domain/farmConfigSolver"
 
 interface BuildingListData {
   key: string

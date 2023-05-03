@@ -2,7 +2,7 @@ import { Card, Radio, Space } from "antd"
 import { Handle, NodeProps, Position } from "reactflow"
 import { useFarmConfigStore } from "../domain/farmConfigStore"
 import { productRecipesByPrimaryProduct } from "../domain/recipe"
-import { RecipeStatus } from "../domain/solver"
+import { RecipeStatus } from "../domain/farmConfigSolver"
 
 export const RecipeResultNodeWidth = 300
 export const RecipeResultNodeHeight = 200

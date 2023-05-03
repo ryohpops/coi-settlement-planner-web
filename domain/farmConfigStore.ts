@@ -4,9 +4,9 @@ import { debounce } from "lodash"
 import create from "zustand"
 import { persist } from "zustand/middleware"
 import { immer } from "zustand/middleware/immer"
+import { FarmConfigSolution, solveFarmConfig } from "./farmConfigSolver"
 import { MEDICAL_SUPPLIES, MedicalSupplies, allFoods } from "./item"
 import { FARM_VARIANT, FarmVariant, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
-import { FarmingConfigSolution, solveFarmingConfig } from "./solver"
 
 const UPDATE_SOLUTION_DELAY = 400
 const LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web"
@@ -24,7 +24,7 @@ interface FarmConfigState {
 
   isSolverRunning: boolean
   feasible: boolean
-  solution: FarmingConfigSolution
+  solution: FarmConfigSolution
 }
 const persistentProperties: Array<keyof FarmConfigState> = [
   "population", "globalAdjustment", "foodsInUse", "foodConsumptionChange",
@@ -43,10 +43,10 @@ interface FarmConfigAction {
   setFertilityTarget: (value: number | null) => void
   setRecipesInUse: (value: string) => void
   updateSolution: () => void
-  onSolverFinished: (result: FarmingConfigSolution) => void
+  onSolverFinished: (result: FarmConfigSolution) => void
 }
 
-const emptyResult: FarmingConfigSolution = {
+const emptyResult: FarmConfigSolution = {
   feasible: false,
   itemStatus: new Map(),
   recipeStatus: new Map()
@@ -70,7 +70,7 @@ const initialState: FarmConfigState = {
     "Produce Medical Supplies III with Assembly (Electric) II"
   ],
 
-  isSolverRunning: false,
+  isSolverRunning: true,
   feasible: emptyResult.feasible,
   solution: emptyResult
 }
@@ -161,12 +161,13 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
 
 function updateSolution(draft: WritableDraft<FarmConfigState & FarmConfigAction>, state: FarmConfigState & FarmConfigAction) {
   draft.isSolverRunning = true
-  solveFarmingConfig(
+  solveFarmConfig(
     state.population * (100 + state.foodConsumptionChange + state.globalAdjustment) / 100,
     state.foodsInUse,
     state.population * (100 + state.medicalSuppliesConsumptionChange + state.globalAdjustment) / 100,
     state.medicalSuppliesInUse,
-    state.farmVariant, state.fertilityTarget, state.recipesInUse
+    state.recipesInUse,
+    state.farmVariant, state.fertilityTarget,
   ).then((result) => useFarmConfigStore.getState().onSolverFinished(result))
 }
 const updateSolutionDebounced = debounce(
