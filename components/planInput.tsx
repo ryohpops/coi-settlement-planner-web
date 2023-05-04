@@ -47,7 +47,7 @@ function PlanInput() {
       </Form.Item>
       <Form.Item
         label="Global adjustment"
-        tooltip="Produce every food x% more than required amount as buffers"
+        tooltip="Produce every item x% more for safety margin. To compensate calculation errors, Leave this at 5% is recommended."
       >
         <InputNumber
           addonAfter="%"
@@ -60,7 +60,9 @@ function PlanInput() {
       <Form.Item>
         <FoodsInUseSelector />
       </Form.Item>
-      <Form.Item label="Total food consumption change by edicts">
+      <Form.Item
+        label="Total food consumption change by edicts"
+        tooltip="Enter the sum of edict's effect in a negative number.">
         <InputNumber
           addonAfter="%"
           value={problemStore.foodConsumptionChange}
@@ -83,7 +85,7 @@ function PlanInput() {
         </Radio.Group>
       </Form.Item>
       <Form.Item
-        label="Average consumption change of Medical Supplies"
+        label="Estimated consumption change in average"
         tooltip="Clinics consume 50% more Medical Supplies while there is a disease."
       >
         <InputNumber
