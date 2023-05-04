@@ -2,7 +2,7 @@ import { Button, Modal, Table } from "antd"
 import { ColumnsType } from "antd/es/table"
 import { useState } from "react"
 import { Node } from "reactflow"
-import { RecipeResult } from "../domain/solver"
+import { RecipeStatus } from "../domain/farmConfigSolver"
 
 interface BuildingListData {
   key: string
@@ -22,7 +22,7 @@ const columns: ColumnsType<BuildingListData> = [
 ]
 
 interface BuildingListProps {
-  nodes: Node<RecipeResult>[]
+  nodes: Node<RecipeStatus>[]
 }
 
 export default function BuildingList(props: BuildingListProps) {

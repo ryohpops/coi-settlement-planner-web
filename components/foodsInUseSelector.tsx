@@ -3,13 +3,13 @@ import { DataNode } from "antd/es/tree"
 import dynamic from "next/dynamic"
 import { useMemo } from "react"
 import { allFoods, categories } from "../domain/item"
-import { useProblemStore } from "../domain/problemStore"
+import { useFarmConfigStore } from "../domain/farmConfigStore"
 
 function FoodsInUseSelector() {
   const treeData = useMemo(() => createTreeData(), [])
 
-  const foodsInUse = useProblemStore((state) => state.foodsInUse)
-  const setFoodsInUse = useProblemStore((state) => state.setFoodsInUse)
+  const foodsInUse = useFarmConfigStore((state) => state.foodsInUse)
+  const setFoodsInUse = useFarmConfigStore((state) => state.setFoodsInUse)
 
   return (
     <Tree

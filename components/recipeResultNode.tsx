@@ -1,14 +1,14 @@
 import { Card, Radio, Space } from "antd"
 import { Handle, NodeProps, Position } from "reactflow"
-import { useProblemStore } from "../domain/problemStore"
+import { useFarmConfigStore } from "../domain/farmConfigStore"
 import { productRecipesByPrimaryProduct } from "../domain/recipe"
-import { RecipeResult } from "../domain/solver"
+import { RecipeStatus } from "../domain/farmConfigSolver"
 
 export const RecipeResultNodeWidth = 300
 export const RecipeResultNodeHeight = 200
 
-export default function RecipeResultNode({ data }: NodeProps<RecipeResult>) {
-  const problemStore = useProblemStore()
+export default function RecipeResultNode({ data }: NodeProps<RecipeStatus>) {
+  const problemStore = useFarmConfigStore()
 
   let selector: JSX.Element | undefined = undefined
   if (data.recipe.primaryProduct) {
