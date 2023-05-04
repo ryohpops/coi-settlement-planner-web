@@ -70,7 +70,7 @@ const initialState: FarmConfigState = {
     "Produce Medical Supplies III with Assembly (Electric) II"
   ],
 
-  isSolverRunning: true,
+  isSolverRunning: false,
   feasible: emptyResult.feasible,
   solution: emptyResult
 }
