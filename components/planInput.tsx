@@ -20,12 +20,12 @@ function PlanInput() {
     setPopulation: state.setPopulation,
     globalAdjustment: state.globalAdjustment,
     setGlobalAdjustment: state.setGlobalAdjustment,
-    foodConsumptionChange: state.foodConsumptionChange,
-    setFoodConsumptionChange: state.setFoodConsumptionChange,
+    foodConsumptionReduction: state.foodConsumptionReduction,
+    setFoodConsumptionReduction: state.setFoodConsumptionReduction,
     medicalSuppliesInUse: state.medicalSuppliesInUse,
     setMedicalSuppliesInUse: state.setMedicalSuppliesInUse,
-    medicalSuppliesConsumptionChange: state.medicalSuppliesConsumptionChange,
-    setMedicalSuppliesConsumptionChange: state.setMedicalSuppliesConsumptionChange,
+    diseaseProportion: state.diseaseProportion,
+    setDiseaseProportion: state.setDiseaseProportion,
     farmVariant: state.farmVariant,
     setFarmVariant: state.setFarmVariant,
     fertilityTarget: state.fertilityTarget,
@@ -61,12 +61,13 @@ function PlanInput() {
         <FoodsInUseSelector />
       </Form.Item>
       <Form.Item
-        label="Total food consumption change by edicts"
-        tooltip="Enter the sum of edict's effect in a negative number.">
+        label="Total food consumption reduction by edicts"
+        tooltip="Enter the sum of edicts' effect.">
         <InputNumber
+          min={0} max={100} step={10}
           addonAfter="%"
-          value={problemStore.foodConsumptionChange}
-          onChange={(value) => problemStore.setFoodConsumptionChange(value)}
+          value={problemStore.foodConsumptionReduction}
+          onChange={(value) => problemStore.setFoodConsumptionReduction(value)}
         />
       </Form.Item>
 
@@ -85,14 +86,26 @@ function PlanInput() {
         </Radio.Group>
       </Form.Item>
       <Form.Item
-        label="Estimated consumption change in average"
-        tooltip="Clinics consume 50% more Medical Supplies while there is a disease."
+        label="Estimated proportion of disease period"
+        tooltip="Proportion of the time with ongoing disease."
       >
-        <InputNumber
-          addonAfter="%"
-          value={problemStore.medicalSuppliesConsumptionChange}
-          onChange={(value) => problemStore.setMedicalSuppliesConsumptionChange(value)}
-        />
+        <Row>
+          <Col span={18} style={{ paddingRight: "1em" }}>
+            <Slider
+              min={0} max={100} step={10}
+              tooltip={{ open: false }}
+              value={problemStore.diseaseProportion}
+              onChange={(value) => problemStore.setDiseaseProportion(value)}
+            />
+          </Col>
+          <Col span={6}>
+            <InputNumber
+              min={0} max={100} step={10} addonAfter="%"
+              value={problemStore.diseaseProportion}
+              onChange={(value) => problemStore.setDiseaseProportion(value)}
+            />
+          </Col>
+        </Row>
       </Form.Item>
 
       <Divider orientation="left">Farm</Divider>

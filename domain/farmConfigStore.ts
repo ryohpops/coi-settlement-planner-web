@@ -15,9 +15,9 @@ interface FarmConfigState {
   population: number
   globalAdjustment: number
   foodsInUse: string[]
-  foodConsumptionChange: number
+  foodConsumptionReduction: number
   medicalSuppliesInUse: MedicalSupplies
-  medicalSuppliesConsumptionChange: number
+  diseaseProportion: number
   farmVariant: FarmVariant
   fertilityTarget: number
   recipesInUse: string[]
@@ -27,8 +27,8 @@ interface FarmConfigState {
   solution: FarmConfigSolution
 }
 const persistentProperties: Array<keyof FarmConfigState> = [
-  "population", "globalAdjustment", "foodsInUse", "foodConsumptionChange",
-  "medicalSuppliesInUse", "medicalSuppliesConsumptionChange",
+  "population", "globalAdjustment", "foodsInUse", "foodConsumptionReduction",
+  "medicalSuppliesInUse", "diseaseProportion",
   "farmVariant", "fertilityTarget", "recipesInUse"
 ]
 
@@ -36,9 +36,9 @@ interface FarmConfigAction {
   setPopulation: (value: number | null) => void
   setGlobalAdjustment: (value: number | null) => void
   setFoodsInUse: (values: string[]) => void
-  setFoodConsumptionChange: (value: number | null) => void
+  setFoodConsumptionReduction: (value: number | null) => void
   setMedicalSuppliesInUse: (value: MedicalSupplies) => void
-  setMedicalSuppliesConsumptionChange: (value: number | null) => void
+  setDiseaseProportion: (value: number | null) => void
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
   setRecipesInUse: (value: string) => void
@@ -56,9 +56,9 @@ const initialState: FarmConfigState = {
   population: 1000,
   globalAdjustment: 5,
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
-  foodConsumptionChange: 0,
+  foodConsumptionReduction: 0,
   medicalSuppliesInUse: MEDICAL_SUPPLIES.MedicalSupplies,
-  medicalSuppliesConsumptionChange: 50,
+  diseaseProportion: 100,
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
   recipesInUse: [
@@ -91,16 +91,16 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
         state.foodsInUse = values.filter((key) => allFoods.has(key))
         updateSolutionDebounced()
       }),
-      setFoodConsumptionChange: (value) => set((state) => {
-        state.foodConsumptionChange = value ?? 0
+      setFoodConsumptionReduction: (value) => set((state) => {
+        state.foodConsumptionReduction = value ?? 0
         updateSolutionDebounced()
       }),
       setMedicalSuppliesInUse: (value) => set((state) => {
         state.medicalSuppliesInUse = value
         updateSolutionDebounced()
       }),
-      setMedicalSuppliesConsumptionChange: (value) => set((state) => {
-        state.medicalSuppliesConsumptionChange = value ?? 0
+      setDiseaseProportion: (value) => set((state) => {
+        state.diseaseProportion = value ?? 0
         updateSolutionDebounced()
       }),
       setFarmVariant: (value) => set((state) => {
@@ -148,11 +148,15 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
       merge: (persistedState, currentState) => {
         return produce(currentState, (state) => Object.assign(state, persistedState))
       },
-      version: 2,
+      version: 3,
       migrate: (persistedState: any, version) => {
         if (version < 2) {
           persistedState.foodConsumptionChange = persistedState.consumptionChange
           delete persistedState.consumptionChange
+        }
+        if (version < 3) {
+          delete persistedState.foodConsumptionChange
+          delete persistedState.medicalSuppliesConsumptionChange
         }
         return persistedState
       }
@@ -162,10 +166,11 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
 function updateSolution(draft: WritableDraft<FarmConfigState & FarmConfigAction>, state: FarmConfigState & FarmConfigAction) {
   draft.isSolverRunning = true
   solveFarmConfig(
-    state.population * (100 + state.foodConsumptionChange + state.globalAdjustment) / 100,
+    state.population * (state.globalAdjustment / 100),
     state.foodsInUse,
-    state.population * (100 + state.medicalSuppliesConsumptionChange + state.globalAdjustment) / 100,
+    state.foodConsumptionReduction / 100,
     state.medicalSuppliesInUse,
+    state.diseaseProportion / 100,
     state.recipesInUse,
     state.farmVariant, state.fertilityTarget,
   ).then((result) => useFarmConfigStore.getState().onSolverFinished(result))

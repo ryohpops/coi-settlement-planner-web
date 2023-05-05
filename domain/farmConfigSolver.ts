@@ -27,8 +27,9 @@ export interface FarmConfigSolution {
 }
 
 export async function solveFarmConfig(
-  populationForFood: number, foodsInUse: string[],
-  populationForMedicalSupplies: number, medicalSuppliesInUse: string,
+  population: number,
+  foodsInUse: string[], foodConsumptionReduction: number,
+  medicalSuppliesInUse: string, diseaseProportion: number,
   recipesInUse: string[],
   farmVariant: FarmVariant, fertilityTarget: number
 ): Promise<FarmConfigSolution> {
@@ -41,8 +42,8 @@ export async function solveFarmConfig(
   )
 
   const isProductSolved = await solveProduct(
-    context, populationForFood, foodsInUse,
-    populationForMedicalSupplies, medicalSuppliesInUse, recipesInUse
+    context, population, foodsInUse, foodConsumptionReduction,
+    medicalSuppliesInUse, diseaseProportion, recipesInUse
   )
   if (!isProductSolved) {
     return {
@@ -72,11 +73,12 @@ export async function solveFarmConfig(
 
 async function solveProduct(
   context: SolverContext,
-  populationForFood: number, foodsInUse: string[], populationForMedicalSupplies: number, medicalSuppliesInUse: string,
+  population: number, foodsInUse: string[], foodConsumptionReduction: number,
+  medicalSuppliesInUse: string, diseaseProportion: number,
   recipesInUse: string[]
 ): Promise<boolean> {
-  registerFoodDemands(context, populationForFood, foodsInUse)
-  registerMedicalSuppliesDemand(context, populationForMedicalSupplies, medicalSuppliesInUse)
+  registerFoodDemands(context, population, foodsInUse, foodConsumptionReduction)
+  registerMedicalSuppliesDemand(context, population, medicalSuppliesInUse, diseaseProportion)
 
   const subjects = new Map<string, string>()
   productRecipesByPrimaryProduct.forEach((recipes, primaryProductName) => {
@@ -145,7 +147,7 @@ async function solveProduct(
   return true
 }
 
-function registerFoodDemands(context: SolverContext, population: number, foodsInUse: string[]) {
+function registerFoodDemands(context: SolverContext, population: number, foodsInUse: string[], foodConsumptionReduction: number) {
   const foods = foodsInUse.map((foodName) => getMapItem(allFoods, foodName))
   const categoriesInUse = new Set(foods.map((food) => food.category))
 
@@ -153,6 +155,7 @@ function registerFoodDemands(context: SolverContext, population: number, foodsIn
     getMapItem(context.itemStatus, food.name).outs.set(
       VIRTUAL_ITEM.Demand,
       population
+      * (1 - foodConsumptionReduction)
       / food.feeds
       / categoriesInUse.size
       / foods.filter((food2) => food2.category === food.category).length
@@ -160,11 +163,11 @@ function registerFoodDemands(context: SolverContext, population: number, foodsIn
   })
 }
 
-function registerMedicalSuppliesDemand(context: SolverContext, population: number, medicalSuppliesInUse: string) {
+function registerMedicalSuppliesDemand(context: SolverContext, population: number, medicalSuppliesInUse: string, diseaseProportion: number) {
   if (medicalSuppliesInUse !== MEDICAL_SUPPLIES.None) {
     getMapItem(context.itemStatus, medicalSuppliesInUse).outs.set(
       VIRTUAL_ITEM.Demand,
-      population / 1000 * 5.4
+      population / 1000 * 5.4 * (1 + diseaseProportion / 2)
     )
   }
 }
