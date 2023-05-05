@@ -166,7 +166,7 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
 function updateSolution(draft: WritableDraft<FarmConfigState & FarmConfigAction>, state: FarmConfigState & FarmConfigAction) {
   draft.isSolverRunning = true
   solveFarmConfig(
-    state.population * (state.globalAdjustment / 100),
+    state.population * (1 + state.globalAdjustment / 100),
     state.foodsInUse,
     state.foodConsumptionReduction / 100,
     state.medicalSuppliesInUse,
