@@ -11,7 +11,7 @@ import FoodsInUseSelector from "./foodsInUseSelector"
 const fertilityTargetMarks: SliderMarks = {
   0: "0%",
   100: "100%",
-  150: "150%"
+  140: "140%"
 }
 
 function PlanInput() {
@@ -125,7 +125,7 @@ function PlanInput() {
         <Row>
           <Col span={18} style={{ paddingRight: "1em" }}>
             <Slider
-              min={0} max={150} step={10}
+              min={0} max={140} step={10}
               marks={fertilityTargetMarks} tooltip={{ open: false }}
               value={problemStore.fertilityTarget}
               onChange={(value) => problemStore.setFertilityTarget(value)}
@@ -133,7 +133,7 @@ function PlanInput() {
           </Col>
           <Col span={6}>
             <InputNumber
-              min={0} max={150} step={10} addonAfter="%"
+              min={0} max={140} step={10} addonAfter="%"
               value={problemStore.fertilityTarget}
               onChange={(value) => problemStore.setFertilityTarget(value)}
             />
