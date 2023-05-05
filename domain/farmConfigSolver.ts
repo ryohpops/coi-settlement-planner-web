@@ -6,15 +6,20 @@ import { FarmVariant, Recipe, farmingRecipes, productRecipesByName, productRecip
 
 const TIME_SCALE = 60
 
+export interface SolverContext {
+  itemStatus: Map<string, ItemStatus>
+  recipeStatus: Map<string, RecipeStatus>
+}
 export interface ItemStatus {
-  item: Item
+  itemSpec: Item
   ins: Map<string, number>
   outs: Map<string, number>
 }
 export interface RecipeStatus {
-  recipe: Recipe
+  recipeSpec: Recipe
   times: number
 }
+
 export interface FarmConfigSolution {
   feasible: boolean
   itemStatus: Map<string, ItemStatus>
@@ -27,14 +32,16 @@ export async function solveFarmConfig(
   recipesInUse: string[],
   farmVariant: FarmVariant, fertilityTarget: number
 ): Promise<FarmConfigSolution> {
-  const itemStatus = new Map<string, ItemStatus>()
+  const context: SolverContext = {
+    itemStatus: new Map(),
+    recipeStatus: new Map()
+  }
   allItems.forEach((item, itemName) =>
-    itemStatus.set(itemName, { item: item, ins: new Map(), outs: new Map() })
+    context.itemStatus.set(itemName, { itemSpec: item, ins: new Map(), outs: new Map() })
   )
-  const recipeStatus = new Map<string, RecipeStatus>()
 
   const isProductSolved = await solveProduct(
-    itemStatus, recipeStatus, populationForFood, foodsInUse,
+    context, populationForFood, foodsInUse,
     populationForMedicalSupplies, medicalSuppliesInUse, recipesInUse
   )
   if (!isProductSolved) {
@@ -43,7 +50,7 @@ export async function solveFarmConfig(
     }
   }
 
-  const isFarmSolved = await solveFarm(itemStatus, recipeStatus, farmVariant, fertilityTarget)
+  const isFarmSolved = await solveFarm(context, farmVariant, fertilityTarget)
   if (!isFarmSolved) {
     return {
       feasible: false, itemStatus: new Map(), recipeStatus: new Map()
@@ -51,10 +58,10 @@ export async function solveFarmConfig(
   }
 
   const activeItemStatus = new Map(
-    Array.from(itemStatus).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)
+    Array.from(context.itemStatus).filter(([itemName, item]) => item.ins.size + item.outs.size > 0)
   )
   const activeRecipeStatus = new Map(
-    Array.from(recipeStatus).filter(([recipeName, recipe]) => recipe.times > 0)
+    Array.from(context.recipeStatus).filter(([recipeName, recipe]) => recipe.times > 0)
   )
   return {
     feasible: true,
@@ -64,23 +71,13 @@ export async function solveFarmConfig(
 }
 
 async function solveProduct(
-  itemStatus: Map<string, ItemStatus>, recipeStatus: Map<string, RecipeStatus>,
+  context: SolverContext,
   populationForFood: number, foodsInUse: string[], populationForMedicalSupplies: number, medicalSuppliesInUse: string,
   recipesInUse: string[]
 ): Promise<boolean> {
-  const demands = new Map<string, number>()
-  calculateFoodDemands(populationForFood, foodsInUse).forEach((demand, foodName) => {
-    demands.set(foodName, demand)
-    const food = getMapItem(itemStatus, foodName)
-    food.outs.set(VIRTUAL_ITEM.Demand, demand)
-  })
-  calculateMedicalSuppliesDemand(populationForMedicalSupplies, medicalSuppliesInUse).forEach((demand, medicalSuppliesName) => {
-    demands.set(medicalSuppliesName, demand)
-    const medicalSupplies = getMapItem(itemStatus, medicalSuppliesName)
-    medicalSupplies.outs.set(VIRTUAL_ITEM.Demand, demand)
-  })
+  registerFoodDemands(context, populationForFood, foodsInUse)
+  registerMedicalSuppliesDemand(context, populationForMedicalSupplies, medicalSuppliesInUse)
 
-  const selectedRecipes: Array<string> = []
   const subjects = new Map<string, string>()
   productRecipesByPrimaryProduct.forEach((recipes, primaryProductName) => {
     let recipe: Recipe
@@ -89,8 +86,8 @@ async function solveProduct(
     } else {
       recipe = recipes.filter((recipe) => recipesInUse.includes(recipe.name))[0]
     }
-    selectedRecipes.push(ToVariableName(recipe.name))
 
+    context.recipeStatus.set(recipe.name, { recipeSpec: recipe, times: 0 })
     recipe.products.forEach((amount, productName) => {
       setOrConcatItem(subjects, ToVariableName(productName), ` + ${amount / recipe.production_time * TIME_SCALE} ${ToVariableName(recipe.name)}`)
     })
@@ -99,10 +96,10 @@ async function solveProduct(
     })
   })
 
-  allItems.forEach((item, itemName) => {
-    if (!item.isCrop && subjects.has(ToVariableName(itemName))) {
-      if (demands.has(itemName)) {
-        setOrConcatItem(subjects, ToVariableName(itemName), ` >= ${getMapItem(demands, itemName)}`)
+  context.itemStatus.forEach((item, itemName) => {
+    if (!item.itemSpec.isCrop) {
+      if (item.outs.has(VIRTUAL_ITEM.Demand)) {
+        setOrConcatItem(subjects, ToVariableName(itemName), ` >= ${getMapItem(item.outs, VIRTUAL_ITEM.Demand)}`)
       } else {
         setOrConcatItem(subjects, ToVariableName(itemName), ` >= 0`)
       }
@@ -110,8 +107,11 @@ async function solveProduct(
   })
 
   let productProblem = "Minimize\n"
-  productProblem += ` Factories: ${selectedRecipes.join(" + ")}\n`
-  productProblem += "Subject To\n"
+  productProblem += " Factories:"
+  context.recipeStatus.forEach((recipe, recipeName) => {
+    productProblem += ` + ${ToVariableName(recipeName)}`
+  })
+  productProblem += "\nSubject To\n"
   subjects.forEach((subject, subjectName) => {
     if (subject.includes(">=")) {
       productProblem += ` ${subjectName}:${subject}\n`
@@ -127,66 +127,57 @@ async function solveProduct(
   Object.values(solution.Columns)
     .filter((solutionColumn: HighsLinearSolutionColumn) => solutionColumn.Primal > 0)
     .forEach((solutionColumn: HighsLinearSolutionColumn) => {
-      const recipeName = FromVariableName(solutionColumn.Name)
-
-      const recipe = getMapItem(productRecipesByName, recipeName)
-      recipeStatus.set(recipeName, { recipe: recipe, times: solutionColumn.Primal })
-
-      recipe.products.forEach((amount, itemName) => {
+      const recipe = getMapItem(context.recipeStatus, FromVariableName(solutionColumn.Name))
+      recipe.times = solutionColumn.Primal
+      recipe.recipeSpec.products.forEach((amount, itemName) => {
         setOrSumItem(
-          getMapItem(itemStatus, itemName).ins,
-          recipeName,
-          amount * solutionColumn.Primal / recipe.production_time * TIME_SCALE
+          getMapItem(context.itemStatus, itemName).ins,
+          recipe.recipeSpec.name,
+          amount * solutionColumn.Primal / recipe.recipeSpec.production_time * TIME_SCALE
         )
       })
-      recipe.ingredients.forEach((amount, itemName) => {
-        const item = getMapItem(itemStatus, itemName)
-        const normalizedDemand = amount * solutionColumn.Primal / recipe.production_time * TIME_SCALE
-        setOrSumItem(item.outs, recipeName, normalizedDemand)
+      recipe.recipeSpec.ingredients.forEach((amount, itemName) => {
+        const item = getMapItem(context.itemStatus, itemName)
+        const normalizedDemand = amount * solutionColumn.Primal / recipe.recipeSpec.production_time * TIME_SCALE
+        setOrSumItem(item.outs, recipe.recipeSpec.name, normalizedDemand)
       })
     })
   return true
 }
 
-function calculateFoodDemands(population: number, foodsInUse: string[]): Map<string, number> {
-  const demands = new Map<string, number>()
+function registerFoodDemands(context: SolverContext, population: number, foodsInUse: string[]) {
   const foods = foodsInUse.map((foodName) => getMapItem(allFoods, foodName))
-
   const categoriesInUse = new Set(foods.map((food) => food.category))
-  foods.forEach((food) => demands.set(
-    food.name,
-    population
-    / food.feeds
-    / categoriesInUse.size
-    / foods.filter((food2) => food2.category === food.category).length
-  ))
 
-  return demands
+  foods.forEach((food) => {
+    getMapItem(context.itemStatus, food.name).outs.set(
+      VIRTUAL_ITEM.Demand,
+      population
+      / food.feeds
+      / categoriesInUse.size
+      / foods.filter((food2) => food2.category === food.category).length
+    )
+  })
 }
 
-function calculateMedicalSuppliesDemand(population: number, medicalSuppliesInUse: string): Map<string, number> {
-  const demands = new Map<string, number>()
+function registerMedicalSuppliesDemand(context: SolverContext, population: number, medicalSuppliesInUse: string) {
   if (medicalSuppliesInUse !== MEDICAL_SUPPLIES.None) {
-    demands.set(
-      medicalSuppliesInUse,
+    getMapItem(context.itemStatus, medicalSuppliesInUse).outs.set(
+      VIRTUAL_ITEM.Demand,
       population / 1000 * 5.4
     )
   }
-  return demands
 }
 
-async function solveFarm(
-  itemStatus: Map<string, ItemStatus>, recipeStatus: Map<string, RecipeStatus>,
-  farmVariant: FarmVariant, fertilityTarget: number
-): Promise<boolean> {
-  const cropWithDemands = Array.from(itemStatus.values())
-    .filter((item) => item.item.isCrop && item.outs.size > 0)
+async function solveFarm(context: SolverContext, farmVariant: FarmVariant, fertilityTarget: number): Promise<boolean> {
+  const cropWithDemands = Array.from(context.itemStatus.values())
+    .filter((item) => item.itemSpec.isCrop && item.outs.size > 0)
   const farmingRecipesOfVariant = Array.from(farmingRecipes[farmVariant].values())
   const cropRecipes = cropWithDemands
-    .map((item) => farmingRecipesOfVariant.find((recipe) => recipe.products.has(item.item.name))!)
+    .map((item) => farmingRecipesOfVariant.find((recipe) => recipe.products.has(item.itemSpec.name))!)
   const cropRotations = generateCropRotations(cropRecipes, fertilityTarget) //TODO: is this needed to be a Map?
   cropRotations.forEach((cropRotation, cropRotationName) =>
-    recipeStatus.set(cropRotationName, { recipe: cropRotation, times: 0 })
+    context.recipeStatus.set(cropRotationName, { recipeSpec: cropRotation, times: 0 })
   )
 
   const subjects = new Map<string, string>()
@@ -198,7 +189,7 @@ async function solveFarm(
 
   cropWithDemands.forEach((crop) => {
     const amount = Array.from(crop.outs.values()).reduce((sum, amount) => sum + amount, 0)
-    setOrConcatItem(subjects, ToVariableName(crop.item.name), ` >= ${amount} `)
+    setOrConcatItem(subjects, ToVariableName(crop.itemSpec.name), ` >= ${amount} `)
   })
 
   const variables = Array.from(cropRotations.keys()).map((name) => ToVariableName(name))
@@ -223,11 +214,11 @@ async function solveFarm(
     const cropRotationName = FromVariableName(solutionColumn.Name)
 
     const recipe = getMapItem(cropRotations, cropRotationName)
-    recipeStatus.set(cropRotationName, { recipe: recipe, times: solutionColumn.Primal })
+    context.recipeStatus.set(cropRotationName, { recipeSpec: recipe, times: solutionColumn.Primal })
 
     recipe.products.forEach((amount, itemName) => {
       setOrSumItem(
-        getMapItem(itemStatus, itemName).ins,
+        getMapItem(context.itemStatus, itemName).ins,
         cropRotationName,
         amount * solutionColumn.Primal / recipe.production_time * TIME_SCALE
       )

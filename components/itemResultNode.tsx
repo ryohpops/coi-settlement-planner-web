@@ -35,7 +35,7 @@ export default function ItemResultNode({ data }: NodeProps<ItemStatus>) {
   return (
     <>
       <Card
-        title={data.item.name} size="small"
+        title={data.itemSpec.name} size="small"
         style={{ width: ItemResultNodeWidth, height: ItemResultNodeHeight }}
         bodyStyle={{ height: "80%" }}
       >
