@@ -1,8 +1,12 @@
 importScripts("/highs-build/highs.js")
 
+let highs
 onmessage = async (e) => {
-  const highs = await Module({
-    locateFile: (file) => "/highs-build/" + file
-  });
+  if (!highs) {
+    highs = await Module({
+      locateFile: (file) => "/highs-build/" + file
+    })
+  }
+
   postMessage(highs.solve(e.data))
 }
