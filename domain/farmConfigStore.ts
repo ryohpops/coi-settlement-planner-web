@@ -52,6 +52,9 @@ const emptyResult: FarmConfigSolution = {
   recipeStatus: new Map()
 }
 
+const firstRecipes = Array.from(productRecipesByPrimaryProduct.entries())
+  .filter(([primaryProduct, recipes]) => recipes.length > 1)
+  .map(([primaryProduct, recipes]) => recipes[0].name)
 const initialState: FarmConfigState = {
   population: 1000,
   globalAdjustment: 5,
@@ -61,14 +64,7 @@ const initialState: FarmConfigState = {
   diseaseProportion: 100,
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
-  recipesInUse: [
-    "Produce Animal Feed from Soybean",
-    "Produce Snack from Corn",
-    "Produce Disinfectant with Chemical Plant",
-    "Produce Ethanol from Corn Mash",
-    "Produce Medical Supplies II with Assembly (Electric) II",
-    "Produce Medical Supplies III with Assembly (Electric) II"
-  ],
+  recipesInUse: firstRecipes,
 
   isSolverRunning: false,
   feasible: emptyResult.feasible,
@@ -148,7 +144,7 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
       merge: (persistedState, currentState) => {
         return produce(currentState, (state) => Object.assign(state, persistedState))
       },
-      version: 3,
+      version: 4,
       migrate: (persistedState: any, version) => {
         if (version < 2) {
           persistedState.foodConsumptionChange = persistedState.consumptionChange
@@ -157,6 +153,9 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
         if (version < 3) {
           delete persistedState.foodConsumptionChange
           delete persistedState.medicalSuppliesConsumptionChange
+        }
+        if (version < 4) {
+          delete persistedState.recipesInUse
         }
         return persistedState
       }

@@ -31,8 +31,8 @@ const productRecipeData: Recipe[] = [
   },
   {
     name: "Produce Meat Trimmings", production_time: 20, primaryProduct: "Meat Trimmings",
-    products: new Map([["Meat Trimmings", 16]]),
-    ingredients: new Map([["Meat", 12]])
+    products: new Map([["Meat Trimmings", 9]]),
+    ingredients: new Map([["Chicken Carcass", 10]])
   },
   {
     name: "Produce Chicken Carcass", production_time: 60, primaryProduct: "Chicken Carcass",
@@ -100,7 +100,12 @@ const productRecipeData: Recipe[] = [
     ingredients: new Map([["Sugar Cane", 10]])
   },
   {
-    name: "Produce Medical Supplies", production_time: 20, primaryProduct: "Medical Supplies",
+    name: "Produce Medical Supplies with Electric II", production_time: 20, primaryProduct: "Medical Supplies",
+    products: new Map([["Medical Supplies", 8]]),
+    ingredients: new Map([["Disinfectant", 4]])
+  },
+  {
+    name: "Produce Medical Supplies with Robotic I", production_time: 10, primaryProduct: "Medical Supplies",
     products: new Map([["Medical Supplies", 8]]),
     ingredients: new Map([["Disinfectant", 4]])
   },
@@ -121,7 +126,7 @@ const productRecipeData: Recipe[] = [
   },
   {
     name: "Produce Ethanol from Sugar", production_time: 40, primaryProduct: "Ethanol",
-    products: new Map([["Ethanol", 4]]),
+    products: new Map([["Ethanol", 6]]),
     ingredients: new Map([["Sugar", 8]])
   },
   {
@@ -130,12 +135,12 @@ const productRecipeData: Recipe[] = [
     ingredients: new Map([["Corn", 8]])
   },
   {
-    name: "Produce Medical Supplies II with Assembly (Electric) II", production_time: 20, primaryProduct: "Medical Supplies II",
+    name: "Produce Medical Supplies II with Electric II", production_time: 20, primaryProduct: "Medical Supplies II",
     products: new Map([["Medical Supplies II", 8]]),
     ingredients: new Map([["Medical Supplies", 8], ["Antibiotics", 4]])
   },
   {
-    name: "Produce Medical Supplies II with Assembly (Robotic)", production_time: 10, primaryProduct: "Medical Supplies II",
+    name: "Produce Medical Supplies II with Robotic I", production_time: 10, primaryProduct: "Medical Supplies II",
     products: new Map([["Medical Supplies II", 8]]),
     ingredients: new Map([["Medical Supplies", 8], ["Antibiotics", 4]])
   },
@@ -145,12 +150,12 @@ const productRecipeData: Recipe[] = [
     ingredients: new Map([["Sugar", 4]])
   },
   {
-    name: "Produce Medical Supplies III with Assembly (Electric) II", production_time: 20, primaryProduct: "Medical Supplies III",
+    name: "Produce Medical Supplies III with Electric II", production_time: 20, primaryProduct: "Medical Supplies III",
     products: new Map([["Medical Supplies III", 8]]),
     ingredients: new Map([["Medical Supplies II", 8], ["Morphine", 4]])
   },
   {
-    name: "Produce Medical Supplies III with Assembly (Robotic)", production_time: 10, primaryProduct: "Medical Supplies III",
+    name: "Produce Medical Supplies III with Robotic I", production_time: 10, primaryProduct: "Medical Supplies III",
     products: new Map([["Medical Supplies III", 8]]),
     ingredients: new Map([["Medical Supplies II", 8], ["Morphine", 4]])
   },
