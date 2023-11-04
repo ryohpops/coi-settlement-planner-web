@@ -30,10 +30,10 @@ export default function BuildingList(props: BuildingListProps) {
 
   const data = props.nodes
     .sort((a, b) => b.data.times - a.data.times)
-    .sort((a, b) => (a.data.recipe.primaryProduct ? 1 : 0) - (b.data.recipe.primaryProduct ? 1 : 0))
+    .sort((a, b) => (a.data.recipeSpec.primaryProduct ? 1 : 0) - (b.data.recipeSpec.primaryProduct ? 1 : 0))
     .map<BuildingListData>((node) => ({
-      key: node.data.recipe.name,
-      name: node.data.recipe.name,
+      key: node.data.recipeSpec.name,
+      name: node.data.recipeSpec.name,
       count: Math.ceil(node.data.times * 100) / 100
     }))
 

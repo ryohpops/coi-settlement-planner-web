@@ -28,17 +28,17 @@ export type VirtualItem = typeof VIRTUAL_ITEM[keyof typeof VIRTUAL_ITEM]
 export const categories = ["Carbs", "Protein", "Vitamins", "Treats"]
 
 const foodData: Food[] = [
-  { name: "Potato", image: "", isFood: true, isCrop: true, category: "Carbs", feeds: 17 },
-  { name: "Corn", image: "", isFood: true, isCrop: true, category: "Carbs", feeds: 25 },
-  { name: "Bread", image: "", isFood: true, isCrop: false, category: "Carbs", feeds: 37 },
-  { name: "Meat", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 27 },
-  { name: "Eggs", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 25 },
-  { name: "Tofu", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 41 },
-  { name: "Sausage", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 22 },
-  { name: "Vegetables", image: "", isFood: true, isCrop: true, category: "Vitamins", feeds: 17 },
-  { name: "Fruit", image: "", isFood: true, isCrop: true, category: "Vitamins", feeds: 23 },
-  { name: "Snack", image: "", isFood: true, isCrop: false, category: "Treats", feeds: 13 },
-  { name: "Cake", image: "", isFood: true, isCrop: false, category: "Treats", feeds: 29 },
+  { name: "Potato", image: "", isFood: true, isCrop: true, category: "Carbs", feeds: 21 },
+  { name: "Corn", image: "", isFood: true, isCrop: true, category: "Carbs", feeds: 30 },
+  { name: "Bread", image: "", isFood: true, isCrop: false, category: "Carbs", feeds: 45 },
+  { name: "Meat", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 33 },
+  { name: "Eggs", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 30 },
+  { name: "Tofu", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 50 },
+  { name: "Sausage", image: "", isFood: true, isCrop: false, category: "Protein", feeds: 27 },
+  { name: "Vegetables", image: "", isFood: true, isCrop: true, category: "Vitamins", feeds: 21 },
+  { name: "Fruit", image: "", isFood: true, isCrop: true, category: "Vitamins", feeds: 28 },
+  { name: "Snack", image: "", isFood: true, isCrop: false, category: "Treats", feeds: 17 },
+  { name: "Cake", image: "", isFood: true, isCrop: false, category: "Treats", feeds: 35 },
 ]
 const productData: Item[] = [
   { name: "Flour", image: "", isFood: false, isCrop: false },
