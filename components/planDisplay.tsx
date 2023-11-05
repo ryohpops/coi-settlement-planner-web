@@ -3,8 +3,8 @@ import { Spin } from "antd"
 import dagre from "dagre"
 import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
 import "reactflow/dist/style.css"
-import { useFarmConfigStore } from "../domain/farmConfigStore"
 import { ItemStatus, RecipeStatus } from "../domain/farmConfigSolver"
+import { useFarmConfigStore } from "../domain/farmConfigStore"
 import BuildingList from "./buildingList"
 import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
 import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
@@ -89,9 +89,6 @@ function PlanDisplayInternal() {
   return (
     <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
       <MiniMap pannable zoomable position="top-right" />
-      <Panel position="bottom-left">
-        <BuildingList nodes={recipeNodes} />
-      </Panel>
       <Panel position="bottom-right">
         {status}
       </Panel>
