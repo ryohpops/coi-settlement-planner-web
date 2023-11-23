@@ -1,8 +1,6 @@
-import { Button, Modal, Table } from "antd"
+import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { useState } from "react"
-import { Node } from "reactflow"
-import { RecipeStatus } from "../domain/farmConfigSolver"
+import { useFarmConfigStore } from "../domain/farmConfigStore"
 
 interface BuildingListData {
   key: string
@@ -21,38 +19,21 @@ const columns: ColumnsType<BuildingListData> = [
   }
 ]
 
-interface BuildingListProps {
-  nodes: Node<RecipeStatus>[]
-}
+export default function BuildingList() {
+  const answer = useFarmConfigStore((state) => state.solution)
 
-export default function BuildingList(props: BuildingListProps) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  const data = props.nodes
-    .sort((a, b) => b.data.times - a.data.times)
-    .sort((a, b) => (a.data.recipeSpec.primaryProduct ? 1 : 0) - (b.data.recipeSpec.primaryProduct ? 1 : 0))
-    .map<BuildingListData>((node) => ({
-      key: node.data.recipeSpec.name,
-      name: node.data.recipeSpec.name,
-      count: Math.ceil(node.data.times * 100) / 100
+  const data = Array.from(answer.recipeStatus.entries())
+    .sort(([aName, aStatus], [bName, bStatus]) => bStatus.times - aStatus.times)
+    .sort(([aName, aStatus], [bName, bStatus]) => (aStatus.recipeSpec.primaryProduct ? 1 : 0) - (bStatus.recipeSpec.primaryProduct ? 1 : 0))
+    .map<BuildingListData>(([name, status]) => ({
+      key: name,
+      name: name,
+      count: Math.ceil(status.times * 100) / 100
     }))
 
   return (
-    <>
-      <Button onClick={() => setIsOpen(true)}>Show Building List</Button>
-      <Modal
-        title="Building List"
-        open={isOpen}
-        footer={[
-          <Button key="close" type="primary" onClick={() => setIsOpen(false)}>Close</Button>
-        ]}
-        onCancel={() => setIsOpen(false)}
-      >
-        <Table
-          size="small"
-          pagination={{ pageSize: 50 }} scroll={{ y: "60vh" }}
-          dataSource={data} columns={columns} />
-      </Modal>
-    </>
+    <Table
+      size="small" pagination={{ pageSize: 50 }}
+      dataSource={data} columns={columns} />
   )
 }

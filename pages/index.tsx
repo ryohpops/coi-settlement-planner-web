@@ -1,9 +1,9 @@
-import { Layout, Typography } from 'antd'
+import { Col, Layout, Row, Typography } from 'antd'
 import Head from 'next/head'
+import BuildingList from '../components/buildingList'
 import PlanDisplay from '../components/planDisplay'
 import PlanInput from '../components/planInput'
-
-const SIDER_WIDTH = 400
+import styles from "./index.module.scss";
 
 export default function Home() {
   return (
@@ -11,21 +11,24 @@ export default function Home() {
       <Head>
         <title>CoI Food Calculator</title>
       </Head>
-      <Layout hasSider style={{ height: "100vh" }}>
-        <Layout.Sider
-          theme='light' width={SIDER_WIDTH}
-          style={{ overflow: 'auto', padding: "0 1em" }}
-        >
-          <PlanInput />
-        </Layout.Sider>
-        <Layout>
-          <Layout.Content>
-            <PlanDisplay />
-          </Layout.Content>
-          <Layout.Footer>
-            <Typography style={{ textAlign: "center" }}>Created by ryohpops</Typography>
-          </Layout.Footer>
-        </Layout>
+
+      <Layout style={{ height: "100vh" }}>
+        <Layout.Content>
+          <Row>
+            <Col span={5} className={styles.sidePanel}>
+              <PlanInput />
+            </Col>
+            <Col span={14}>
+              <PlanDisplay />
+            </Col>
+            <Col span={5} className={styles.sidePanel}>
+              <BuildingList />
+            </Col>
+          </Row>
+        </Layout.Content>
+        <Layout.Footer>
+          <Typography style={{ textAlign: "center" }}>Created by ryohpops</Typography>
+        </Layout.Footer>
       </Layout>
     </>
   )
