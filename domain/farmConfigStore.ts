@@ -1,7 +1,6 @@
 import { produce } from "immer"
-import { WritableDraft } from "immer/dist/internal"
 import { debounce } from "lodash"
-import create from "zustand"
+import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { immer } from "zustand/middleware/immer"
 import { FarmConfigSolution, solveFarmConfig } from "./farmConfigSolver"
@@ -125,7 +124,10 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
         state.recipesInUse = [...others, value]
         updateSolutionDebounced()
       }),
-      updateSolution: () => set((state) => updateSolution(state, get())),
+      updateSolution: () => set((state) => {
+        state.isSolverRunning = true
+        updateSolution(get())
+      }),
       onSolverFinished: (result) => set((state) => {
         state.isSolverRunning = false
         state.feasible = result.feasible
@@ -162,8 +164,7 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
     })
 )
 
-function updateSolution(draft: WritableDraft<FarmConfigState & FarmConfigAction>, state: FarmConfigState & FarmConfigAction) {
-  draft.isSolverRunning = true
+function updateSolution(state: FarmConfigState & FarmConfigAction) {
   solveFarmConfig(
     state.population * (1 + state.globalAdjustment / 100),
     state.foodsInUse,
@@ -175,6 +176,9 @@ function updateSolution(draft: WritableDraft<FarmConfigState & FarmConfigAction>
   ).then((result) => useFarmConfigStore.getState().onSolverFinished(result))
 }
 const updateSolutionDebounced = debounce(
-  () => useFarmConfigStore.setState((state) => updateSolution(state, useFarmConfigStore.getState())),
+  () => useFarmConfigStore.setState((state) => {
+    state.isSolverRunning = true
+    updateSolution(useFarmConfigStore.getState())
+  }),
   UPDATE_SOLUTION_DELAY
 )
