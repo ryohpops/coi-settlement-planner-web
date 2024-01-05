@@ -20,7 +20,7 @@
     "dagre": "^0.8.5",
     "eslint": "8.56.0",
     "eslint-config-next": "14.0.4",
-    "highs": "^1.0.0",
+    "highs": "^1.0.1",
     "immer": "^10.0.3",
     "lodash": "^4.17.21",
     "next": "14.0.4",

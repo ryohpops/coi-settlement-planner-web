@@ -36,8 +36,8 @@ dependencies:
     specifier: 14.0.4
     version: 14.0.4(eslint@8.56.0)(typescript@5.3.3)
   highs:
-    specifier: ^1.0.0
-    version: 1.0.0
+    specifier: ^1.0.1
+    version: 1.0.1
   immer:
     specifier: ^10.0.3
     version: 10.0.3
@@ -1954,8 +1954,8 @@ packages:
       function-bind: 1.1.2
     dev: false
 
-  /highs@1.0.0:
-    resolution: {integrity: sha512-BD8rgVkzAhtCwt0C9+iiq9BSxWZ+OUYmMXfip1+EGqyTQei1s2P/ppx/dUfKHXh6lMDWMKQzVswL5tfDoMNVLQ==}
+  /highs@1.0.1:
+    resolution: {integrity: sha512-RwVukT+x/BFAoSaIo8FP9zsTqSXfpdrY5MupQvBbSv4Umx79FkFrnHjcfMhy624YiBAI17GVPwNp4qpHNMAhbA==}
     dev: false
 
   /ignore@5.3.0:
