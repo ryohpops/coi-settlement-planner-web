@@ -1,9 +1,10 @@
 import { Tree } from "antd"
+import { Key } from "antd/es/table/interface"
 import { DataNode } from "antd/es/tree"
 import dynamic from "next/dynamic"
 import { useMemo } from "react"
-import { allFoods, categories } from "../domain/item"
 import { useFarmConfigStore } from "../domain/farmConfigStore"
+import { allFoods, categories } from "../domain/item"
 
 function FoodsInUseSelector() {
   const treeData = useMemo(() => createTreeData(), [])
@@ -24,7 +25,7 @@ export default dynamic(() => Promise.resolve(FoodsInUseSelector), { ssr: false }
 
 function createTreeData(): DataNode[] {
   const treeData: DataNode[] = []
-  const parentKeys: (string | number)[] = []
+  const parentKeys: Key[] = []
 
   const foods: DataNode = { key: "Foods", title: "Foods", children: [] }
   treeData.push(foods)
