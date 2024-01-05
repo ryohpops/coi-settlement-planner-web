@@ -2,7 +2,7 @@ import { HighsLinearSolutionColumn, HighsMixedIntegerLinearSolutionColumn } from
 import { generateCropRotations } from "./cropRotation"
 import { solve } from "./highsWorkerManager"
 import { Item, MEDICAL_SUPPLIES, VIRTUAL_ITEM, allFoods, allItems } from "./item"
-import { FarmVariant, Recipe, farmingRecipes, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
+import { FarmVariant, Recipe, farmingRecipes, productRecipesByPrimaryProduct } from "./recipe"
 
 const TIME_SCALE = 60
 

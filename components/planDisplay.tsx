@@ -5,7 +5,6 @@ import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, us
 import "reactflow/dist/style.css"
 import { ItemStatus, RecipeStatus } from "../domain/farmConfigSolver"
 import { useFarmConfigStore } from "../domain/farmConfigStore"
-import BuildingList from "./buildingList"
 import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
 import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
 
