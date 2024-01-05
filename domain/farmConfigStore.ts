@@ -14,7 +14,7 @@ interface FarmConfigState {
   population: number
   globalAdjustment: number
   foodsInUse: string[]
-  foodConsumptionReduction: number
+  foodConsumptionChange: number
   medicalSuppliesInUse: MedicalSupplies
   diseaseProportion: number
   farmVariant: FarmVariant
@@ -26,7 +26,7 @@ interface FarmConfigState {
   solution: FarmConfigSolution
 }
 const persistentProperties: Array<keyof FarmConfigState> = [
-  "population", "globalAdjustment", "foodsInUse", "foodConsumptionReduction",
+  "population", "globalAdjustment", "foodsInUse", "foodConsumptionChange",
   "medicalSuppliesInUse", "diseaseProportion",
   "farmVariant", "fertilityTarget", "recipesInUse"
 ]
@@ -35,7 +35,7 @@ interface FarmConfigAction {
   setPopulation: (value: number | null) => void
   setGlobalAdjustment: (value: number | null) => void
   setFoodsInUse: (values: string[]) => void
-  setFoodConsumptionReduction: (value: number | null) => void
+  setFoodConsumptionChange: (value: number | null) => void
   setMedicalSuppliesInUse: (value: MedicalSupplies) => void
   setDiseaseProportion: (value: number | null) => void
   setFarmVariant: (value: FarmVariant) => void
@@ -58,7 +58,7 @@ const initialState: FarmConfigState = {
   population: 1000,
   globalAdjustment: 5,
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
-  foodConsumptionReduction: 0,
+  foodConsumptionChange: 0,
   medicalSuppliesInUse: MEDICAL_SUPPLIES.MedicalSupplies,
   diseaseProportion: 100,
   farmVariant: FARM_VARIANT.Farm,
@@ -86,8 +86,8 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
         state.foodsInUse = values.filter((key) => allFoods.has(key))
         updateSolutionDebounced()
       }),
-      setFoodConsumptionReduction: (value) => set((state) => {
-        state.foodConsumptionReduction = value ?? 0
+      setFoodConsumptionChange: (value) => set((state) => {
+        state.foodConsumptionChange = value ?? 0
         updateSolutionDebounced()
       }),
       setMedicalSuppliesInUse: (value) => set((state) => {
@@ -146,7 +146,7 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
       merge: (persistedState, currentState) => {
         return produce(currentState, (state) => Object.assign(state, persistedState))
       },
-      version: 4,
+      version: 5,
       migrate: (persistedState: any, version) => {
         if (version < 2) {
           persistedState.foodConsumptionChange = persistedState.consumptionChange
@@ -159,6 +159,10 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
         if (version < 4) {
           delete persistedState.recipesInUse
         }
+        if (version < 5) {
+          persistedState.foodConsumptionChange = -persistedState.foodConsumptionReduction
+          delete persistedState.foodConsumptionReduction
+        }
         return persistedState
       }
     })
@@ -168,7 +172,7 @@ function updateSolution(state: FarmConfigState & FarmConfigAction) {
   solveFarmConfig(
     state.population * (1 + state.globalAdjustment / 100),
     state.foodsInUse,
-    state.foodConsumptionReduction / 100,
+    state.foodConsumptionChange / 100,
     state.medicalSuppliesInUse,
     state.diseaseProportion / 100,
     state.recipesInUse,

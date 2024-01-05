@@ -28,7 +28,7 @@ export interface FarmConfigSolution {
 
 export async function solveFarmConfig(
   population: number,
-  foodsInUse: string[], foodConsumptionReduction: number,
+  foodsInUse: string[], foodConsumptionChange: number,
   medicalSuppliesInUse: string, diseaseProportion: number,
   recipesInUse: string[],
   farmVariant: FarmVariant, fertilityTarget: number
@@ -42,7 +42,7 @@ export async function solveFarmConfig(
   )
 
   const isProductSolved = await solveProduct(
-    context, population, foodsInUse, foodConsumptionReduction,
+    context, population, foodsInUse, foodConsumptionChange,
     medicalSuppliesInUse, diseaseProportion, recipesInUse
   )
   if (!isProductSolved) {
@@ -73,11 +73,11 @@ export async function solveFarmConfig(
 
 async function solveProduct(
   context: SolverContext,
-  population: number, foodsInUse: string[], foodConsumptionReduction: number,
+  population: number, foodsInUse: string[], foodConsumptionChange: number,
   medicalSuppliesInUse: string, diseaseProportion: number,
   recipesInUse: string[]
 ): Promise<boolean> {
-  registerFoodDemands(context, population, foodsInUse, foodConsumptionReduction)
+  registerFoodDemands(context, population, foodsInUse, foodConsumptionChange)
   registerMedicalSuppliesDemand(context, population, medicalSuppliesInUse, diseaseProportion)
 
   const subjects = new Map<string, string>()
@@ -147,7 +147,7 @@ async function solveProduct(
   return true
 }
 
-function registerFoodDemands(context: SolverContext, population: number, foodsInUse: string[], foodConsumptionReduction: number) {
+function registerFoodDemands(context: SolverContext, population: number, foodsInUse: string[], foodConsumptionChange: number) {
   const foods = foodsInUse.map((foodName) => getMapItem(allFoods, foodName))
   const categoriesInUse = new Set(foods.map((food) => food.category))
 
@@ -155,7 +155,7 @@ function registerFoodDemands(context: SolverContext, population: number, foodsIn
     getMapItem(context.itemStatus, food.name).outs.set(
       VIRTUAL_ITEM.Demand,
       population
-      * (1 - foodConsumptionReduction)
+      * (1 + foodConsumptionChange)
       / food.feeds
       / categoriesInUse.size
       / foods.filter((food2) => food2.category === food.category).length
