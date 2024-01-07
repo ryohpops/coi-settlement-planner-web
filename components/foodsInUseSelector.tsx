@@ -3,14 +3,14 @@ import { Key } from "antd/es/table/interface"
 import { DataNode } from "antd/es/tree"
 import dynamic from "next/dynamic"
 import { useMemo } from "react"
-import { useFarmConfigStore } from "../domain/farmConfigStore"
+import { useFarmConfigInputStore } from "../domain/farmConfigInputStore"
 import { allFoods, categories } from "../domain/item"
 
 function FoodsInUseSelector() {
   const treeData = useMemo(() => createTreeData(), [])
 
-  const foodsInUse = useFarmConfigStore((state) => state.foodsInUse)
-  const setFoodsInUse = useFarmConfigStore((state) => state.setFoodsInUse)
+  const foodsInUse = useFarmConfigInputStore((state) => state.foodsInUse)
+  const setFoodsInUse = useFarmConfigInputStore((state) => state.setFoodsInUse)
 
   return (
     <Tree

@@ -1,14 +1,14 @@
 import { Card, Radio, Space } from "antd"
 import { Handle, NodeProps, Position } from "reactflow"
-import { useFarmConfigStore } from "../domain/farmConfigStore"
-import { productRecipesByPrimaryProduct } from "../domain/recipe"
+import { useFarmConfigInputStore } from "../domain/farmConfigInputStore"
 import { RecipeStatus } from "../domain/farmConfigSolver"
+import { productRecipesByPrimaryProduct } from "../domain/recipe"
 
 export const RecipeResultNodeWidth = 300
 export const RecipeResultNodeHeight = 200
 
 export default function RecipeResultNode({ data }: NodeProps<RecipeStatus>) {
-  const problemStore = useFarmConfigStore()
+  const inputStore = useFarmConfigInputStore()
 
   let selector: JSX.Element | undefined = undefined
   if (data.recipeSpec.primaryProduct) {
@@ -19,7 +19,7 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeStatus>) {
       selector = (
         <Radio.Group
           value={data.recipeSpec.name}
-          onChange={(e) => problemStore.setRecipesInUse(e.target.value)}
+          onChange={(e) => inputStore.setRecipesInUse(e.target.value)}
         >
           <Space direction="vertical">
             {selection}
