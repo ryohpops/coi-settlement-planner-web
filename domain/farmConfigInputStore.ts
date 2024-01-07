@@ -1,16 +1,23 @@
 import { produce } from "immer"
-import { debounce } from "lodash"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { immer } from "zustand/middleware/immer"
-import { FarmConfigSolution, solveFarmConfig } from "./farmConfigSolver"
+import { useFarmConfigSolutionStore } from "./farmConfigSolutionStore"
 import { MEDICAL_SUPPLIES, MedicalSupplies, allFoods } from "./item"
 import { FARM_VARIANT, FarmVariant, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
 
-const UPDATE_SOLUTION_DELAY = 400
-const LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web"
+const LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web.farm-config-input-store"
+const OLD_LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web"
 
-interface FarmConfigState {
+if (typeof window !== "undefined") {
+  const oldLocalStorage = localStorage.getItem(OLD_LOCAL_STORAGE_NAME)
+  if (oldLocalStorage) {
+    localStorage.setItem(LOCAL_STORAGE_NAME, oldLocalStorage)
+    localStorage.removeItem(OLD_LOCAL_STORAGE_NAME)
+  }
+}
+
+interface FarmConfigInputState {
   population: number
   globalAdjustment: number
   foodsInUse: string[]
@@ -20,18 +27,9 @@ interface FarmConfigState {
   farmVariant: FarmVariant
   fertilityTarget: number
   recipesInUse: string[]
-
-  isSolverRunning: boolean
-  feasible: boolean
-  solution: FarmConfigSolution
 }
-const persistentProperties: Array<keyof FarmConfigState> = [
-  "population", "globalAdjustment", "foodsInUse", "foodConsumptionChange",
-  "medicalSuppliesInUse", "diseaseProportion",
-  "farmVariant", "fertilityTarget", "recipesInUse"
-]
 
-interface FarmConfigAction {
+interface FarmConfigInputAction {
   setPopulation: (value: number | null) => void
   setGlobalAdjustment: (value: number | null) => void
   setFoodsInUse: (values: string[]) => void
@@ -41,20 +39,12 @@ interface FarmConfigAction {
   setFarmVariant: (value: FarmVariant) => void
   setFertilityTarget: (value: number | null) => void
   setRecipesInUse: (value: string) => void
-  updateSolution: () => void
-  onSolverFinished: (result: FarmConfigSolution) => void
-}
-
-const emptyResult: FarmConfigSolution = {
-  feasible: false,
-  itemStatus: new Map(),
-  recipeStatus: new Map()
 }
 
 const firstRecipes = Array.from(productRecipesByPrimaryProduct.entries())
   .filter(([primaryProduct, recipes]) => recipes.length > 1)
   .map(([primaryProduct, recipes]) => recipes[0].name)
-const initialState: FarmConfigState = {
+const initialState: FarmConfigInputState = {
   population: 1000,
   globalAdjustment: 5,
   foodsInUse: ["Potato", "Corn", "Bread", "Vegetables"],
@@ -63,48 +53,44 @@ const initialState: FarmConfigState = {
   diseaseProportion: 100,
   farmVariant: FARM_VARIANT.Farm,
   fertilityTarget: 0,
-  recipesInUse: firstRecipes,
-
-  isSolverRunning: false,
-  feasible: emptyResult.feasible,
-  solution: emptyResult
+  recipesInUse: firstRecipes
 }
 
-export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
+export const useFarmConfigInputStore = create<FarmConfigInputState & FarmConfigInputAction>()(
   persist(
     immer((set, get) => ({
       ...initialState,
       setPopulation: (value) => set((state) => {
         state.population = value ?? 0
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setGlobalAdjustment: (value) => set((state) => {
         state.globalAdjustment = value ?? 0
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setFoodsInUse: (values) => set((state) => {
         state.foodsInUse = values.filter((key) => allFoods.has(key))
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setFoodConsumptionChange: (value) => set((state) => {
         state.foodConsumptionChange = value ?? 0
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setMedicalSuppliesInUse: (value) => set((state) => {
         state.medicalSuppliesInUse = value
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setDiseaseProportion: (value) => set((state) => {
         state.diseaseProportion = value ?? 0
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setFarmVariant: (value) => set((state) => {
         state.farmVariant = value
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setFertilityTarget: (value) => set((state) => {
         state.fertilityTarget = value ?? 0
-        updateSolutionDebounced()
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       }),
       setRecipesInUse: (value) => set((state) => {
         const recipe = productRecipesByName.get(value)
@@ -122,67 +108,34 @@ export const useFarmConfigStore = create<FarmConfigState & FarmConfigAction>()(
 
         const others = state.recipesInUse.filter((recipeName) => !recipeNamesForProduct.includes(recipeName))
         state.recipesInUse = [...others, value]
-        updateSolutionDebounced()
-      }),
-      updateSolution: () => set((state) => {
-        state.isSolverRunning = true
-        updateSolution(get())
-      }),
-      onSolverFinished: (result) => set((state) => {
-        state.isSolverRunning = false
-        state.feasible = result.feasible
-        if (result.feasible) {
-          state.solution = result
-        }
+        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
       })
     })),
     {
       name: LOCAL_STORAGE_NAME,
-      partialize: (state) => {
-        return Object.fromEntries(
-          Object.entries(state).filter(([key, value]) => persistentProperties.includes(key as keyof FarmConfigState))
-        )
-      },
       merge: (persistedState, currentState) => {
-        return produce(currentState, (state) => Object.assign(state, persistedState))
+        return produce(currentState, (state: any) => Object.assign(state, persistedState))
       },
       version: 5,
-      migrate: (persistedState: any, version) => {
-        if (version < 2) {
-          persistedState.foodConsumptionChange = persistedState.consumptionChange
-          delete persistedState.consumptionChange
-        }
-        if (version < 3) {
-          delete persistedState.foodConsumptionChange
-          delete persistedState.medicalSuppliesConsumptionChange
-        }
-        if (version < 4) {
-          delete persistedState.recipesInUse
-        }
-        if (version < 5) {
-          persistedState.foodConsumptionChange = -persistedState.foodConsumptionReduction
-          delete persistedState.foodConsumptionReduction
-        }
-        return persistedState
-      }
+      migrate: migratePersistedState
     })
 )
 
-function updateSolution(state: FarmConfigState & FarmConfigAction) {
-  solveFarmConfig(
-    state.population * (1 + state.globalAdjustment / 100),
-    state.foodsInUse,
-    state.foodConsumptionChange / 100,
-    state.medicalSuppliesInUse,
-    state.diseaseProportion / 100,
-    state.recipesInUse,
-    state.farmVariant, state.fertilityTarget,
-  ).then((result) => useFarmConfigStore.getState().onSolverFinished(result))
+function migratePersistedState(persistedState: any, version: number) {
+  if (version < 2) {
+    persistedState.foodConsumptionChange = persistedState.consumptionChange
+    delete persistedState.consumptionChange
+  }
+  if (version < 3) {
+    delete persistedState.foodConsumptionChange
+    delete persistedState.medicalSuppliesConsumptionChange
+  }
+  if (version < 4) {
+    delete persistedState.recipesInUse
+  }
+  if (version < 5) {
+    persistedState.foodConsumptionChange = -persistedState.foodConsumptionReduction
+    delete persistedState.foodConsumptionReduction
+  }
+  return persistedState
 }
-const updateSolutionDebounced = debounce(
-  () => useFarmConfigStore.setState((state) => {
-    state.isSolverRunning = true
-    updateSolution(useFarmConfigStore.getState())
-  }),
-  UPDATE_SOLUTION_DELAY
-)

@@ -3,8 +3,8 @@ import { Spin } from "antd"
 import dagre from "dagre"
 import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
 import "reactflow/dist/style.css"
+import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 import { ItemStatus, RecipeStatus } from "../domain/farmConfigSolver"
-import { useFarmConfigStore } from "../domain/farmConfigStore"
 import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
 import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
 
@@ -22,9 +22,9 @@ export default function PlanDisplay() {
 }
 
 function PlanDisplayInternal() {
-  const answer = useFarmConfigStore((state) => state.solution)
-  const isSolverRunning = useFarmConfigStore((state) => state.isSolverRunning)
-  const feasible = useFarmConfigStore((state) => state.feasible)
+  const answer = useFarmConfigSolutionStore((state) => state.solution)
+  const isSolverRunning = useFarmConfigSolutionStore((state) => state.isSolverRunning)
+  const feasible = useFarmConfigSolutionStore((state) => state.feasible)
   const updateNode = useUpdateNodeInternals()
 
   const graph = new dagre.graphlib.Graph()

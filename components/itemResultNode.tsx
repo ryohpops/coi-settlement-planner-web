@@ -1,8 +1,8 @@
 import { Card } from "antd"
 import { Chart } from "react-google-charts"
 import { Handle, NodeProps, Position } from "reactflow"
-import { VIRTUAL_ITEM } from "../domain/item"
 import { ItemStatus } from "../domain/farmConfigSolver"
+import { VIRTUAL_ITEM } from "../domain/item"
 
 export const ItemResultNodeWidth = 300
 export const ItemResultNodeHeight = 200

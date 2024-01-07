@@ -1,6 +1,6 @@
 import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { useFarmConfigStore } from "../domain/farmConfigStore"
+import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 
 interface BuildingListData {
   key: string
@@ -20,7 +20,7 @@ const columns: ColumnsType<BuildingListData> = [
 ]
 
 export default function BuildingList() {
-  const answer = useFarmConfigStore((state) => state.solution)
+  const answer = useFarmConfigSolutionStore((state) => state.solution)
 
   const data = Array.from(answer.recipeStatus.entries())
     .sort(([aName, aStatus], [bName, bStatus]) => bStatus.times - aStatus.times)

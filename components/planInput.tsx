@@ -2,7 +2,8 @@ import { Col, Divider, Form, InputNumber, Radio, Row, Slider, Space } from "antd
 import { SliderMarks } from "antd/es/slider"
 import dynamic from "next/dynamic"
 import { useEffect } from "react"
-import { useFarmConfigStore } from "../domain/farmConfigStore"
+import { useFarmConfigInputStore } from "../domain/farmConfigInputStore"
+import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 import { MEDICAL_SUPPLIES } from "../domain/item"
 import { FARM_VARIANT } from "../domain/recipe"
 import FoodsInUseSelector from "./foodsInUseSelector"
@@ -14,9 +15,10 @@ const fertilityTargetMarks: SliderMarks = {
 }
 
 function PlanInput() {
-  const farmConfigStore = useFarmConfigStore()
+  const inputStore = useFarmConfigInputStore()
+  const updateSolution = useFarmConfigSolutionStore().updateSolution
 
-  useEffect(() => farmConfigStore.updateSolution(), [])
+  useEffect(() => updateSolution(), [updateSolution])
 
   return (
     <Form layout="vertical">
@@ -24,8 +26,8 @@ function PlanInput() {
       <Form.Item label="Population">
         <InputNumber
           min={0}
-          value={farmConfigStore.population}
-          onChange={(value) => farmConfigStore.setPopulation(value)}
+          value={inputStore.population}
+          onChange={(value) => inputStore.setPopulation(value)}
         />
       </Form.Item>
       <Form.Item
@@ -34,8 +36,8 @@ function PlanInput() {
       >
         <InputNumber
           addonAfter="%"
-          value={farmConfigStore.globalAdjustment}
-          onChange={(value) => farmConfigStore.setGlobalAdjustment(value)}
+          value={inputStore.globalAdjustment}
+          onChange={(value) => inputStore.setGlobalAdjustment(value)}
         />
       </Form.Item>
 
@@ -49,16 +51,16 @@ function PlanInput() {
         <InputNumber
           min={-100} max={100} step={5}
           addonAfter="%"
-          value={farmConfigStore.foodConsumptionChange}
-          onChange={(value) => farmConfigStore.setFoodConsumptionChange(value)}
+          value={inputStore.foodConsumptionChange}
+          onChange={(value) => inputStore.setFoodConsumptionChange(value)}
         />
       </Form.Item>
 
       <Divider orientation="left">Medical supply in use</Divider>
       <Form.Item>
         <Radio.Group
-          value={farmConfigStore.medicalSuppliesInUse}
-          onChange={(e) => farmConfigStore.setMedicalSuppliesInUse(e.target.value)}
+          value={inputStore.medicalSuppliesInUse}
+          onChange={(e) => inputStore.setMedicalSuppliesInUse(e.target.value)}
         >
           <Space direction="vertical">
             <Radio value={MEDICAL_SUPPLIES.None}>None</Radio>
@@ -77,15 +79,15 @@ function PlanInput() {
             <Slider
               min={0} max={100} step={10}
               tooltip={{ open: false }}
-              value={farmConfigStore.diseaseProportion}
-              onChange={(value) => farmConfigStore.setDiseaseProportion(value)}
+              value={inputStore.diseaseProportion}
+              onChange={(value) => inputStore.setDiseaseProportion(value)}
             />
           </Col>
           <Col span={6}>
             <InputNumber
               min={0} max={100} step={10} addonAfter="%"
-              value={farmConfigStore.diseaseProportion}
-              onChange={(value) => farmConfigStore.setDiseaseProportion(value)}
+              value={inputStore.diseaseProportion}
+              onChange={(value) => inputStore.setDiseaseProportion(value)}
             />
           </Col>
         </Row>
@@ -94,8 +96,8 @@ function PlanInput() {
       <Divider orientation="left">Farm</Divider>
       <Form.Item>
         <Radio.Group
-          value={farmConfigStore.farmVariant}
-          onChange={(e) => farmConfigStore.setFarmVariant(e.target.value)}
+          value={inputStore.farmVariant}
+          onChange={(e) => inputStore.setFarmVariant(e.target.value)}
         >
           <Space direction="vertical">
             <Radio value={FARM_VARIANT.Farm}>Farm / Irrigated Farm</Radio>
@@ -110,15 +112,15 @@ function PlanInput() {
             <Slider
               min={0} max={140} step={10}
               marks={fertilityTargetMarks} tooltip={{ open: false }}
-              value={farmConfigStore.fertilityTarget}
-              onChange={(value) => farmConfigStore.setFertilityTarget(value)}
+              value={inputStore.fertilityTarget}
+              onChange={(value) => inputStore.setFertilityTarget(value)}
             />
           </Col>
           <Col span={6}>
             <InputNumber
               min={0} max={140} step={10} addonAfter="%"
-              value={farmConfigStore.fertilityTarget}
-              onChange={(value) => farmConfigStore.setFertilityTarget(value)}
+              value={inputStore.fertilityTarget}
+              onChange={(value) => inputStore.setFertilityTarget(value)}
             />
           </Col>
         </Row>
