@@ -1,4 +1,5 @@
 import { Card, Radio, Space } from "antd"
+import type { JSX } from "react"
 import { Handle, NodeProps, Position } from "reactflow"
 import { useFarmConfigInputStore } from "../domain/farmConfigInputStore"
 import { RecipeStatus } from "../domain/farmConfigSolver"

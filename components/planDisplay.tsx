@@ -1,6 +1,7 @@
 import { CheckCircleTwoTone, WarningTwoTone } from "@ant-design/icons"
 import { Spin } from "antd"
 import dagre from "dagre"
+import type { JSX } from "react"
 import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
 import "reactflow/dist/style.css"
 import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
