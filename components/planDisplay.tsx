@@ -1,17 +1,17 @@
 import { CheckCircleTwoTone, WarningTwoTone } from "@ant-design/icons"
+import { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlow, ReactFlowProvider, useUpdateNodeInternals } from "@xyflow/react"
+import "@xyflow/react/dist/style.css"
 import { Spin } from "antd"
 import dagre from "dagre"
 import type { JSX } from "react"
-import ReactFlow, { Edge, MiniMap, Node, NodeTypes, Panel, ReactFlowProvider, useUpdateNodeInternals } from "reactflow"
-import "reactflow/dist/style.css"
 import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 import { ItemStatus, RecipeStatus } from "../domain/farmConfigSolver"
-import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth } from "./itemResultNode"
-import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth } from "./recipeResultNode"
+import ItemResultNode, { ItemResultNodeHeight, ItemResultNodeWidth, ItemResultReference } from "./itemResultNode"
+import RecipeResultNode, { RecipeResultNodeHeight, RecipeResultNodeWidth, RecipeResultReference } from "./recipeResultNode"
 
 const nodeTypes: NodeTypes = {
-  itemResult: ItemResultNode,
-  recipeResult: RecipeResultNode
+  "itemResult": ItemResultNode,
+  "recipeResult": RecipeResultNode
 }
 
 export default function PlanDisplay() {
@@ -96,16 +96,16 @@ function PlanDisplayInternal() {
   )
 }
 
-function createItemNode(itemResult: ItemStatus): Node<ItemStatus> {
+function createItemNode(itemResult: ItemStatus): ItemResultReference {
   return {
     id: itemResult.itemSpec.name, type: "itemResult",
-    position: { x: 0, y: 0 }, data: itemResult
+    position: { x: 0, y: 0 }, data: { name: itemResult.itemSpec.name }
   }
 }
 
-function createRecipeNode(recipeResult: RecipeStatus): Node<RecipeStatus> {
+function createRecipeNode(recipeResult: RecipeStatus): RecipeResultReference {
   return {
     id: recipeResult.recipeSpec.name, type: "recipeResult",
-    position: { x: 0, y: 0 }, data: recipeResult
+    position: { x: 0, y: 0 }, data: { name: recipeResult.recipeSpec.name }
   }
 }

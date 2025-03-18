@@ -1,25 +1,33 @@
+import { Handle, Node, NodeProps, Position } from "@xyflow/react"
 import { Card, Radio, Space } from "antd"
 import type { JSX } from "react"
-import { Handle, NodeProps, Position } from "reactflow"
 import { useFarmConfigInputStore } from "../domain/farmConfigInputStore"
-import { RecipeStatus } from "../domain/farmConfigSolver"
+import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 import { productRecipesByPrimaryProduct } from "../domain/recipe"
 
 export const RecipeResultNodeWidth = 300
 export const RecipeResultNodeHeight = 200
 
-export default function RecipeResultNode({ data }: NodeProps<RecipeStatus>) {
+export type RecipeResultReference = Node<{ name: string }, "recipeResult">
+
+export default function RecipeResultNode({ data }: NodeProps<RecipeResultReference>) {
   const inputStore = useFarmConfigInputStore()
+  const answer = useFarmConfigSolutionStore((state) => state.solution)
+
+  const recipe = answer.recipeStatus.get(data.name)
+  if (!recipe) {
+    return null
+  }
 
   let selector: JSX.Element | undefined = undefined
-  if (data.recipeSpec.primaryProduct) {
-    const recipesForProduct = productRecipesByPrimaryProduct.get(data.recipeSpec.primaryProduct)
+  if (recipe && recipe.recipeSpec.primaryProduct) {
+    const recipesForProduct = productRecipesByPrimaryProduct.get(recipe.recipeSpec.primaryProduct)
     if (recipesForProduct && recipesForProduct.length > 1) {
       const selection = recipesForProduct.map((recipe) => recipe.name)
         .map((recipeName) => <Radio key={recipeName} value={recipeName}>{recipeName}</Radio>)
       selector = (
         <Radio.Group
-          value={data.recipeSpec.name}
+          value={recipe.recipeSpec.name}
           onChange={(e) => inputStore.setRecipesInUse(e.target.value)}
         >
           <Space direction="vertical">
@@ -33,19 +41,19 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeStatus>) {
   return (
     <>
       <Card
-        title={data.recipeSpec.name} size="small"
+        title={data.name} size="small"
         style={{ width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }}
       >
-        {`Need ${Math.ceil(data.times * 100) / 100} building(s)`}
+        {`Need ${Math.ceil(recipe.times * 100) / 100} building(s)`}
         {selector}
       </Card>
       <Handle
         type="target" position={Position.Left}
-        hidden={data.recipeSpec.ingredients.size === 0}
+        hidden={recipe.recipeSpec.ingredients.size === 0}
       />
       <Handle
         type="source" position={Position.Right}
-        hidden={data.recipeSpec.products.size === 0}
+        hidden={recipe.recipeSpec.products.size === 0}
       />
     </>
   )

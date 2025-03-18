@@ -1,7 +1,7 @@
+import { Handle, Node, NodeProps, Position } from "@xyflow/react"
 import { Card } from "antd"
 import { Chart } from "react-google-charts"
-import { Handle, NodeProps, Position } from "reactflow"
-import { ItemStatus } from "../domain/farmConfigSolver"
+import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 import { VIRTUAL_ITEM } from "../domain/item"
 
 export const ItemResultNodeWidth = 300
@@ -16,17 +16,26 @@ const options = {
   legend: { position: "none" }
 }
 
-export default function ItemResultNode({ data }: NodeProps<ItemStatus>) {
+export type ItemResultReference = Node<{ name: string }, "itemResult">
+
+export default function ItemResultNode({ data }: NodeProps<ItemResultReference>) {
+  const answer = useFarmConfigSolutionStore((state) => state.solution)
+
   const items: string[] = ["Item"]
   const ins: (string | number)[] = ["In"]
   const outs: (string | number)[] = ["Out"]
 
-  data.ins.forEach((amount, relation) => {
+  const item = answer.itemStatus.get(data.name)
+  if (!item) {
+    return null
+  }
+
+  item.ins.forEach((amount, relation) => {
     items.push(relation)
     ins.push(amount)
     outs.push(0)
   })
-  data.outs.forEach((amount, relation) => {
+  item.outs.forEach((amount, relation) => {
     items.push(relation)
     ins.push(0)
     outs.push(amount)
@@ -35,9 +44,9 @@ export default function ItemResultNode({ data }: NodeProps<ItemStatus>) {
   return (
     <>
       <Card
-        title={data.itemSpec.name} size="small"
+        title={data.name} size="small"
         style={{ width: ItemResultNodeWidth, height: ItemResultNodeHeight }}
-        bodyStyle={{ height: "80%" }}
+        styles={{ body: { height: "80%" } }}
       >
         <Chart
           chartType="BarChart" width="100%" height="100%"
@@ -46,11 +55,11 @@ export default function ItemResultNode({ data }: NodeProps<ItemStatus>) {
       </Card>
       <Handle
         type="target" position={Position.Left}
-        hidden={data.ins.size === 0}
+        hidden={item.ins.size === 0}
       />
       <Handle
         type="source" position={Position.Right}
-        hidden={data.outs.size === 0 || (data.outs.size === 1 && data.outs.has(VIRTUAL_ITEM.Demand))}
+        hidden={item.outs.size === 0 || (item.outs.size === 1 && item.outs.has(VIRTUAL_ITEM.Demand))}
       />
     </>
   )
