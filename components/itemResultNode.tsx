@@ -1,19 +1,65 @@
 import { Handle, Node, NodeProps, Position } from "@xyflow/react"
 import { Card } from "antd"
-import { Chart } from "react-google-charts"
+import { ApexOptions } from "apexcharts"
+import { isArray, isNumber } from "lodash"
+import dynamic from "next/dynamic"
 import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
 import { VIRTUAL_ITEM } from "../domain/item"
+const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 export const ItemResultNodeWidth = 300
 export const ItemResultNodeHeight = 200
+const formatOptions = { minimumFractionDigits: 1, maximumFractionDigits: 1 }
+const xAxisMaxMargin = 1.3
 
-const options = {
-  chartArea: { left: 24, top: 6, width: "80%", height: "80%" },
-  isStacked: true,
-  hAxis: {
-    minValue: 0,
-  },
-  legend: { position: "none" }
+function createChartOptions(xAxisMax: number): ApexOptions {
+  return {
+    chart: {
+      type: "bar",
+      stacked: true,
+      toolbar: {
+        show: false,
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        dataLabels: {
+          total: {
+            enabled: true,
+            offsetX: 4,
+          },
+        },
+      },
+    },
+    xaxis: {
+      categories: ["In", "Out"],
+      min: 0,
+      max: xAxisMax,
+    },
+    dataLabels: {
+      enabled: false,
+      formatter: (val, opts) => {
+        if (isArray(val)) {
+          return val.map((v) => v.toLocaleString(undefined, formatOptions))
+        } else if (isNumber(val)) {
+          return val.toLocaleString(undefined, formatOptions)
+        } else {
+          return val
+        }
+      },
+    },
+    tooltip: {
+      y: {
+        formatter(val, opts) {
+          return val.toLocaleString(undefined, formatOptions)
+        },
+      },
+    },
+    legend: {
+      show: false,
+    },
+  }
 }
 
 export type ItemResultReference = Node<{ name: string }, "itemResult">
@@ -21,25 +67,29 @@ export type ItemResultReference = Node<{ name: string }, "itemResult">
 export default function ItemResultNode({ data }: NodeProps<ItemResultReference>) {
   const answer = useFarmConfigSolutionStore((state) => state.solution)
 
-  const items: string[] = ["Item"]
-  const ins: (string | number)[] = ["In"]
-  const outs: (string | number)[] = ["Out"]
-
   const item = answer.itemStatus.get(data.name)
   if (!item) {
     return null
   }
 
+  const series: ApexAxisChartSeries = []
+  let totalIn = 0
+  let totalOut = 0
   item.ins.forEach((amount, relation) => {
-    items.push(relation)
-    ins.push(amount)
-    outs.push(0)
+    series.push({
+      name: relation,
+      data: [amount, 0],
+    })
+    totalIn += amount
   })
   item.outs.forEach((amount, relation) => {
-    items.push(relation)
-    ins.push(0)
-    outs.push(amount)
+    series.push({
+      name: relation,
+      data: [0, amount],
+    })
+    totalOut += amount
   })
+  const chartOptions = createChartOptions(Math.max(totalIn, totalOut) * xAxisMaxMargin)
 
   return (
     <>
@@ -48,10 +98,7 @@ export default function ItemResultNode({ data }: NodeProps<ItemResultReference>)
         style={{ width: ItemResultNodeWidth, height: ItemResultNodeHeight }}
         styles={{ body: { height: "80%" } }}
       >
-        <Chart
-          chartType="BarChart" width="100%" height="100%"
-          data={[items, ins, outs]} options={options}
-        />
+        <Chart type="bar" height="100%" options={chartOptions} series={series} />
       </Card>
       <Handle
         type="target" position={Position.Left}
