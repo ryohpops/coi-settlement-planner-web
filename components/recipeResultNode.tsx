@@ -44,8 +44,10 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeResultReferen
         title={data.name} size="small"
         style={{ width: RecipeResultNodeWidth, height: RecipeResultNodeHeight }}
       >
-        {`Need ${Math.ceil(recipe.times * 100) / 100} building(s)`}
-        {selector}
+        <Space direction="vertical">
+          {`Need ${Math.ceil(recipe.times * 100) / 100} building(s)`}
+          {selector}
+        </Space>
       </Card>
       <Handle
         type="target" position={Position.Left}

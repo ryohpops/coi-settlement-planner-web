@@ -29,7 +29,7 @@ function PlanDisplayInternal() {
   const updateNode = useUpdateNodeInternals()
 
   const graph = new dagre.graphlib.Graph()
-  graph.setGraph({ rankdir: "LR" })
+  graph.setGraph({ rankdir: "LR", ranksep: ItemResultNodeWidth })
   graph.setDefaultEdgeLabel(() => ({}))
 
   const itemNodes: Node[] = []
