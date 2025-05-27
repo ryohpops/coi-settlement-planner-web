@@ -14,22 +14,27 @@
     "@types/dagre": "^0.7.52",
     "@types/lodash": "^4.14.202",
     "@types/node": "20.10.6",
-    "@types/react": "18.2.46",
-    "@types/react-dom": "18.2.18",
+    "@types/react": "19.0.11",
+    "@types/react-dom": "19.0.4",
+    "@xyflow/react": "^12.4.4",
     "antd": "^5.12.7",
+    "apexcharts": "^4.5.0",
     "dagre": "^0.8.5",
     "eslint": "8.56.0",
-    "eslint-config-next": "14.0.4",
+    "eslint-config-next": "15.2.3",
     "highs": "^1.0.1",
     "immer": "^10.0.3",
     "lodash": "^4.17.21",
-    "next": "14.0.4",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-google-charts": "^4.0.1",
-    "reactflow": "^11.10.1",
+    "next": "15.2.3",
+    "react": "19.0.0",
+    "react-apexcharts": "^1.7.0",
+    "react-dom": "19.0.0",
     "sass": "^1.69.7",
     "typescript": "5.3.3",
-    "zustand": "^4.4.7"
+    "zustand": "^5.0.3"
+  },
+  "overrides": {
+    "@types/react": "19.0.11",
+    "@types/react-dom": "19.0.4"
   }
 }
