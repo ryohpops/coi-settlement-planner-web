@@ -26,6 +26,19 @@ export interface FarmConfigSolution {
   recipeStatus: Map<string, RecipeStatus>
 }
 
+/**
+ * Solves the entire production chain to meet the population's demands for food and medical supplies.
+ * This function first calculates the required products and then solves for the farm configuration needed to grow the necessary crops.
+ * @param population The total population to support.
+ * @param foodsInUse A list of food items that are part of the population's diet.
+ * @param foodConsumptionChange A percentage change in food consumption.
+ * @param medicalSuppliesInUse The type of medical supplies in use.
+ * @param diseaseProportion The proportion of the population affected by disease, influencing medical supply demand.
+ * @param recipesInUse A list of specific recipes to be used for production.
+ * @param farmVariant The type of farm to be used.
+ * @param fertilityTarget The desired soil fertility to be maintained on farms.
+ * @returns A promise that resolves to a `FarmConfigSolution` object, indicating if a feasible solution was found, and detailing the required items and recipes.
+ */
 export async function solveFarmConfig(
   population: number,
   foodsInUse: string[], foodConsumptionChange: number,
@@ -71,6 +84,18 @@ export async function solveFarmConfig(
   }
 }
 
+/**
+ * Solves for the required production of all non-crop items based on population demands.
+ * It constructs and solves a linear programming problem to determine the necessary recipe execution counts.
+ * @param context The solver context, which will be populated with the results.
+ * @param population The total population to support.
+ * @param foodsInUse A list of food items that are part of the population's diet.
+ * @param foodConsumptionChange A percentage change in food consumption.
+ * @param medicalSuppliesInUse The type of medical supplies in use.
+ * @param diseaseProportion The proportion of the population affected by disease.
+ * @param recipesInUse A list of specific recipes to be used for production.
+ * @returns A promise that resolves to `true` if an optimal solution is found, otherwise `false`.
+ */
 async function solveProduct(
   context: SolverContext,
   population: number, foodsInUse: string[], foodConsumptionChange: number,
@@ -147,6 +172,14 @@ async function solveProduct(
   return true
 }
 
+/**
+ * Calculates and registers the demand for each food item based on population and dietary choices.
+ * The demand is distributed among the selected food items and their categories.
+ * @param context The solver context to update with food demands.
+ * @param population The total population to feed.
+ * @param foodsInUse A list of food items that are part of the population's diet.
+ * @param foodConsumptionChange A percentage change in food consumption.
+ */
 function registerFoodDemands(context: SolverContext, population: number, foodsInUse: string[], foodConsumptionChange: number) {
   const foods = foodsInUse.map((foodName) => getMapItem(allFoods, foodName))
   const categoriesInUse = new Set(foods.map((food) => food.category))
@@ -163,6 +196,13 @@ function registerFoodDemands(context: SolverContext, population: number, foodsIn
   })
 }
 
+/**
+ * Calculates and registers the demand for medical supplies based on population and disease prevalence.
+ * @param context The solver context to update with medical supply demands.
+ * @param population The total population.
+ * @param medicalSuppliesInUse The type of medical supply being used.
+ * @param diseaseProportion The proportion of the population affected by disease.
+ */
 function registerMedicalSuppliesDemand(context: SolverContext, population: number, medicalSuppliesInUse: string, diseaseProportion: number) {
   if (medicalSuppliesInUse !== MEDICAL_SUPPLIES.None) {
     getMapItem(context.itemStatus, medicalSuppliesInUse).outs.set(
@@ -172,6 +212,14 @@ function registerMedicalSuppliesDemand(context: SolverContext, population: numbe
   }
 }
 
+/**
+ * Solves for the required number of farms and their crop rotations to meet crop demands.
+ * This function uses mixed-integer linear programming to find the optimal number of farms.
+ * @param context The solver context, containing crop demands from the product solver.
+ * @param farmVariant The type of farm to be used (e.g., Farm, Farm (Hydroponic)).
+ * @param fertilityTarget The desired soil fertility to be maintained on farms.
+ * @returns A promise that resolves to `true` if an optimal solution is found, otherwise `false`.
+ */
 async function solveFarm(context: SolverContext, farmVariant: FarmVariant, fertilityTarget: number): Promise<boolean> {
   const cropWithDemands = Array.from(context.itemStatus.values())
     .filter((item) => item.itemSpec.isCrop && item.outs.size > 0)

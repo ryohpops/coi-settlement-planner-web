@@ -7,6 +7,13 @@ export interface CropRotation extends Recipe {
   equilibrium: number
 }
 
+/**
+ * Generates crop rotation recipes for all possible pairs of two crops from the given crop recipes,
+ * considering the fertility target for the farm.
+ * @param cropRecipes An array of base crop recipes to form rotations from.
+ * @param fertilityTarget The fertility target for the farm.
+ * @returns A map of the generated crop rotation recipes, with recipe names as keys.
+ */
 export function generateCropRotations(cropRecipes: Recipe[], fertilityTarget: number): Map<string, CropRotation> {
   const cropRotations = new Map<string, CropRotation>(
     cropRecipes.flatMap(
@@ -15,6 +22,14 @@ export function generateCropRotations(cropRecipes: Recipe[], fertilityTarget: nu
   return cropRotations
 }
 
+/**
+ * Creates a single crop rotation recipe from a given set of crops.
+ * It calculates the average equilibrium fertility and the expected output for each crop in the rotation,
+ * factoring in the specified fertility target.
+ * @param fertilityTarget The fertility target for the farm.
+ * @param cropRecipes The sequence of crop recipes to be included in the rotation.
+ * @returns A single, combined crop rotation recipe.
+ */
 function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): CropRotation {
   let averageEquilibrium = 1
   const rotationTime = cropRecipes.reduce((sum, recipe) => sum + recipe.production_time, 0)
@@ -54,6 +69,12 @@ function createCropRotation(fertilityTarget: number, ...cropRecipes: Recipe[]): 
   }
 }
 
+/**
+ * Extracts the primary product's name and amount from a crop recipe.
+ * @param recipe The crop recipe to process.
+ * @returns A tuple containing the crop name and the production amount.
+ * @throws An error if the recipe lacks a primary product or its production amount.
+ */
 function getCropNameAndAmount(recipe: Recipe): [string, number] {
   const cropName = recipe.primaryProduct
   if (!cropName) {
@@ -67,6 +88,12 @@ function getCropNameAndAmount(recipe: Recipe): [string, number] {
   return [cropName, cropAmount]
 }
 
+/**
+ * Retrieves the fertility consumption value from a crop recipe's ingredients.
+ * @param recipe The crop recipe to examine.
+ * @returns The amount of fertility the crop consumes.
+ * @throws An error if the recipe does not list fertility as an ingredient.
+ */
 function getFertilityUsage(recipe: Recipe): number {
   const fertilityUsage = recipe.ingredients.get(VIRTUAL_ITEM.Fertility)
   if (fertilityUsage) {
