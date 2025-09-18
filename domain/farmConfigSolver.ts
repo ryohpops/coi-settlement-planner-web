@@ -145,6 +145,7 @@ async function solveProduct(
     }
   })
   productProblem += "End"
+  console.debug("Product Problem:\n" + productProblem)
 
   const solution = await solve(productProblem)
   if (solution.Status != "Optimal") {
@@ -255,6 +256,7 @@ async function solveFarm(context: SolverContext, farmVariant: FarmVariant, ferti
   farmProblem += "General\n"
   farmProblem += ` ${variables.join(" ")}`
   farmProblem += "\nEnd"
+  console.debug("Farm Problem:\n" + farmProblem)
 
   const solution = await solve(farmProblem)
   if (solution.Status != "Optimal") {
