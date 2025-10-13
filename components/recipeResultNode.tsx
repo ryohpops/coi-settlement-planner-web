@@ -1,9 +1,7 @@
 import { Handle, Node, NodeProps, Position } from "@xyflow/react"
-import { Card, Radio, Space } from "antd"
-import type { JSX } from "react"
+import { Card, Space } from "antd"
 import { useFarmConfigInputStore } from "../domain/farmConfigInputStore"
 import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
-import { productRecipesByPrimaryProduct } from "../domain/recipe"
 
 export const RecipeResultNodeWidth = 300
 export const RecipeResultNodeHeight = 200
@@ -19,25 +17,6 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeResultReferen
     return null
   }
 
-  let selector: JSX.Element | undefined = undefined
-  if (recipe && recipe.recipeSpec.primaryProduct) {
-    const recipesForProduct = productRecipesByPrimaryProduct.get(recipe.recipeSpec.primaryProduct)
-    if (recipesForProduct && recipesForProduct.length > 1) {
-      const selection = recipesForProduct.map((recipe) => recipe.name)
-        .map((recipeName) => <Radio key={recipeName} value={recipeName}>{recipeName}</Radio>)
-      selector = (
-        <Radio.Group
-          value={recipe.recipeSpec.name}
-          onChange={(e) => inputStore.setRecipesInUse(e.target.value)}
-        >
-          <Space direction="vertical">
-            {selection}
-          </Space>
-        </Radio.Group>
-      )
-    }
-  }
-
   return (
     <>
       <Card
@@ -46,7 +25,6 @@ export default function RecipeResultNode({ data }: NodeProps<RecipeResultReferen
       >
         <Space direction="vertical">
           {`Need ${Math.ceil(recipe.times * 100) / 100} building(s)`}
-          {selector}
         </Space>
       </Card>
       <Handle

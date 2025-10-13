@@ -1,6 +1,8 @@
 import { debounce } from "lodash"
 import { create } from "zustand"
 import { immer } from "zustand/middleware/immer"
+import { ITEM_BY_NAME } from "../constants/item"
+import { getRecipesOfFactories } from "../constants/recipe"
 import { useFarmConfigInputStore } from "./farmConfigInputStore"
 import { FarmConfigSolution, solveFarmConfig } from "./farmConfigSolver"
 
@@ -21,33 +23,38 @@ interface FarmConfigSolutionAction {
 const emptyResult: FarmConfigSolution = {
   feasible: false,
   itemStatus: new Map(),
-  recipeStatus: new Map()
+  recipeStatus: new Map(),
 }
 
 const initialState: FarmConfigSolutionState = {
   isSolverRunning: false,
   feasible: emptyResult.feasible,
-  solution: emptyResult
+  solution: emptyResult,
 }
 
-export const useFarmConfigSolutionStore = create<FarmConfigSolutionState & FarmConfigSolutionAction>()(
+export const useFarmConfigSolutionStore = create<
+  FarmConfigSolutionState & FarmConfigSolutionAction
+>()(
   immer((set, get) => ({
     ...initialState,
-    updateSolution: () => set((state) => {
-      state.isSolverRunning = true
-      runSolver(get().onSolverFinished)
-    }),
-    updateSolutionDebounced: () => set((state) => {
-      state.isSolverRunning = true
-      runSolverDebounced(get().onSolverFinished)
-    }),
-    onSolverFinished: (result) => set((state) => {
-      state.isSolverRunning = false
-      state.feasible = result.feasible
-      if (result.feasible) {
-        state.solution = result
-      }
-    })
+    updateSolution: () =>
+      set((state) => {
+        state.isSolverRunning = true
+        runSolver(get().onSolverFinished)
+      }),
+    updateSolutionDebounced: () =>
+      set((state) => {
+        state.isSolverRunning = true
+        runSolverDebounced(get().onSolverFinished)
+      }),
+    onSolverFinished: (result) =>
+      set((state) => {
+        state.isSolverRunning = false
+        state.feasible = result.feasible
+        if (result.feasible) {
+          state.solution = result
+        }
+      }),
   }))
 )
 
@@ -56,15 +63,13 @@ function runSolver(callback: updateSolutionCallback) {
   const farmConfigInput = useFarmConfigInputStore.getState()
   solveFarmConfig(
     farmConfigInput.population * (1 + farmConfigInput.globalAdjustment / 100),
-    farmConfigInput.foodsInUse,
+    farmConfigInput.foodsInUse.map((foodName) => ITEM_BY_NAME[foodName]),
     farmConfigInput.foodConsumptionChange / 100,
     farmConfigInput.medicalSuppliesInUse,
     farmConfigInput.diseaseProportion / 100,
-    farmConfigInput.recipesInUse,
-    farmConfigInput.farmVariant, farmConfigInput.fertilityTarget,
+    getRecipesOfFactories(farmConfigInput.factoriesInUse),
+    farmConfigInput.farmVariant,
+    farmConfigInput.fertilityTarget
   ).then((result) => callback(result))
 }
-const runSolverDebounced = debounce(
-  runSolver,
-  UPDATE_SOLUTION_DELAY
-)
+const runSolverDebounced = debounce(runSolver, UPDATE_SOLUTION_DELAY)

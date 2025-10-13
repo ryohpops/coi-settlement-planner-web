@@ -2,11 +2,12 @@ import { produce } from "immer"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { immer } from "zustand/middleware/immer"
+import { FACTORY_BY_CATEGORY, FACTORY_BY_NAME } from "../constants/entity"
+import { MEDICAL_SUPPLIES, MedicalSupplies } from "../constants/item"
 import { useFarmConfigSolutionStore } from "./farmConfigSolutionStore"
-import { MEDICAL_SUPPLIES, MedicalSupplies, allFoods } from "./item"
-import { FARM_VARIANT, FarmVariant, productRecipesByName, productRecipesByPrimaryProduct } from "./recipe"
 
-const LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web.farm-config-input-store"
+const LOCAL_STORAGE_NAME =
+  "ryohpops.coi-settlement-planner-web.farm-config-input-store"
 const OLD_LOCAL_STORAGE_NAME = "ryohpops.coi-settlement-planner-web"
 
 if (typeof window !== "undefined") {
@@ -24,9 +25,9 @@ interface FarmConfigInputState {
   foodConsumptionChange: number
   medicalSuppliesInUse: MedicalSupplies
   diseaseProportion: number
-  farmVariant: FarmVariant
+  farmVariant: string
   fertilityTarget: number
-  recipesInUse: string[]
+  factoriesInUse: string[]
 }
 
 interface FarmConfigInputAction {
@@ -36,14 +37,11 @@ interface FarmConfigInputAction {
   setFoodConsumptionChange: (value: number | null) => void
   setMedicalSuppliesInUse: (value: MedicalSupplies) => void
   setDiseaseProportion: (value: number | null) => void
-  setFarmVariant: (value: FarmVariant) => void
+  setFarmVariant: (value: string) => void
   setFertilityTarget: (value: number | null) => void
-  setRecipesInUse: (value: string) => void
+  changeFactoriesInUse: (value: string) => void
 }
 
-const firstRecipes = Array.from(productRecipesByPrimaryProduct.entries())
-  .filter(([primaryProduct, recipes]) => recipes.length > 1)
-  .map(([primaryProduct, recipes]) => recipes[0].name)
 const initialState: FarmConfigInputState = {
   population: 1000,
   globalAdjustment: 5,
@@ -51,91 +49,91 @@ const initialState: FarmConfigInputState = {
   foodConsumptionChange: 0,
   medicalSuppliesInUse: MEDICAL_SUPPLIES.MedicalSupplies,
   diseaseProportion: 100,
-  farmVariant: FARM_VARIANT.Farm,
+  farmVariant: "Farm",
   fertilityTarget: 0,
-  recipesInUse: firstRecipes
+  factoriesInUse: Object.keys(FACTORY_BY_CATEGORY).map(
+    (category) => FACTORY_BY_CATEGORY[category]![0].name // use the first variant in each category
+  ),
 }
 
-export const useFarmConfigInputStore = create<FarmConfigInputState & FarmConfigInputAction>()(
+export const useFarmConfigInputStore = create<
+  FarmConfigInputState & FarmConfigInputAction
+>()(
   persist(
     immer((set, get) => ({
       ...initialState,
-      setPopulation: (value) => set((state) => {
-        state.population = value ?? 0
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setGlobalAdjustment: (value) => set((state) => {
-        state.globalAdjustment = value ?? 0
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setFoodsInUse: (values) => set((state) => {
-        state.foodsInUse = values.filter((key) => allFoods.has(key))
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setFoodConsumptionChange: (value) => set((state) => {
-        state.foodConsumptionChange = value ?? 0
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setMedicalSuppliesInUse: (value) => set((state) => {
-        state.medicalSuppliesInUse = value
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setDiseaseProportion: (value) => set((state) => {
-        state.diseaseProportion = value ?? 0
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setFarmVariant: (value) => set((state) => {
-        state.farmVariant = value
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setFertilityTarget: (value) => set((state) => {
-        state.fertilityTarget = value ?? 0
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      }),
-      setRecipesInUse: (value) => set((state) => {
-        const recipe = productRecipesByName.get(value)
-        if (!recipe) {
-          throw new Error(`Recipe with name ${value} not found.`)
-        } else if (!recipe.primaryProduct) {
-          throw new Error(`Recipe ${value} does not have primary product.`)
-        }
+      setPopulation: (value) =>
+        set((state) => {
+          state.population = value ?? 0
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setGlobalAdjustment: (value) =>
+        set((state) => {
+          state.globalAdjustment = value ?? 0
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setFoodsInUse: (value) =>
+        set((state) => {
+          state.foodsInUse = value
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setFoodConsumptionChange: (value) =>
+        set((state) => {
+          state.foodConsumptionChange = value ?? 0
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setMedicalSuppliesInUse: (value) =>
+        set((state) => {
+          state.medicalSuppliesInUse = value
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setDiseaseProportion: (value) =>
+        set((state) => {
+          state.diseaseProportion = value ?? 0
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setFarmVariant: (value) =>
+        set((state) => {
+          state.farmVariant = value
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      setFertilityTarget: (value) =>
+        set((state) => {
+          state.fertilityTarget = value ?? 0
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
+      changeFactoriesInUse: (factoryName) =>
+        set((state) => {
+          const changedCategory = FACTORY_BY_NAME[factoryName].category
+          const variantsInChangedCategory = FACTORY_BY_CATEGORY[
+            changedCategory
+          ]!.map((f) => f.name)
 
-        const recipesForProduct = productRecipesByPrimaryProduct.get(recipe.primaryProduct)
-        if (!recipesForProduct) {
-          throw new Error(`Recipe for product ${recipe.primaryProduct} not found.`)
-        }
-        const recipeNamesForProduct = recipesForProduct.map((recipe) => recipe.name)
-
-        const others = state.recipesInUse.filter((recipeName) => !recipeNamesForProduct.includes(recipeName))
-        state.recipesInUse = [...others, value]
-        useFarmConfigSolutionStore.getState().updateSolutionDebounced()
-      })
+          // Filter out the variant in the same category then add the selected factory
+          state.factoriesInUse = state.factoriesInUse
+            .filter(
+              (name) => !variantsInChangedCategory.includes(name) === false
+            )
+            .concat(factoryName)
+          useFarmConfigSolutionStore.getState().updateSolutionDebounced()
+        }),
     })),
     {
       name: LOCAL_STORAGE_NAME,
       merge: (persistedState, currentState) => {
-        return produce(currentState, (state: any) => Object.assign(state, persistedState))
+        return produce(currentState, (state: any) =>
+          Object.assign(state, persistedState)
+        )
       },
-      version: 5,
-      migrate: migratePersistedState
-    })
+      version: 1,
+      migrate: migratePersistedState,
+    }
+  )
 )
 
 function migratePersistedState(persistedState: any, version: number) {
-  if (version < 2) {
-    persistedState.foodConsumptionChange = persistedState.consumptionChange
-    delete persistedState.consumptionChange
-  }
-  if (version < 3) {
-    delete persistedState.foodConsumptionChange
-    delete persistedState.medicalSuppliesConsumptionChange
-  }
-  if (version < 4) {
-    delete persistedState.recipesInUse
-  }
-  if (version < 5) {
-    persistedState.foodConsumptionChange = -persistedState.foodConsumptionReduction
-    delete persistedState.foodConsumptionReduction
+  if (version < 1) {
+    // placeholder for future migrations
   }
   return persistedState
 }

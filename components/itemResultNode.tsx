@@ -3,8 +3,8 @@ import { Card } from "antd"
 import { ApexOptions } from "apexcharts"
 import { isArray, isNumber } from "lodash"
 import dynamic from "next/dynamic"
+import { VIRTUAL_ITEM } from "../constants/item"
 import { useFarmConfigSolutionStore } from "../domain/farmConfigSolutionStore"
-import { VIRTUAL_ITEM } from "../domain/item"
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 export const ItemResultNodeWidth = 300
